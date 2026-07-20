@@ -7,6 +7,7 @@ Interactive, responsive UI concept for DOL English's internal Marketing Operatin
 - Multi-project workspace and project switcher
 - Marketing overview dashboard
 - Content Studio with five AI workflows: Keywords Research, Outline, Writer, Review and Audit
+- Expandable Content Tools sidebar with a dedicated route and workspace for each workflow
 - Writer canvas with editable system prompt, live OpenRouter model catalog, DOL brand voice, writing style and on-page guardrails
 - Secure Content Agent backend using `OPENROUTER_CONTENT_KEY`, plus HTML, Word-compatible DOC and TXT export
 - SEO Suite
