@@ -1,6 +1,16 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false,
+  "redirects": [
+    { "source": "/", "destination": "/seo", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/seo", "destination": "/index.html" },
+    { "source": "/seo/", "destination": "/index.html" },
+    { "source": "/seo/styles.css", "destination": "/styles.css" },
+    { "source": "/seo/app.js", "destination": "/app.js" },
+    { "source": "/seo/api/:path*", "destination": "/api/:path*" },
+    { "source": "/seo/:path*", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
