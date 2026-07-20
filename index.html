@@ -168,6 +168,16 @@
             </div>
 
             <div class="content-workflow active" id="content-writer">
+              <div class="panel google-doc-bar" id="googleDocBar">
+                <span class="google-doc-icon">G</span>
+                <div><strong id="googleDocTitle">Google Docs chưa kết nối</strong><small id="googleDocMeta">Đăng nhập Google Workspace để tạo tài liệu và đồng bộ comment.</small></div>
+                <span class="google-doc-state disconnected" id="googleDocState">Chưa kết nối</span>
+                <button class="secondary-btn mini-btn" id="googleConnect" type="button">Kết nối Google</button>
+                <button class="secondary-btn mini-btn" id="createGoogleDoc" type="button" hidden>Tạo Google Doc</button>
+                <button class="secondary-btn mini-btn" id="syncGoogleDoc" type="button" hidden>↑ Gửi lên Docs</button>
+                <button class="secondary-btn mini-btn" id="pullGoogleDoc" type="button" hidden>↓ Lấy từ Docs</button>
+                <a class="primary-btn mini-btn google-open-link" id="openGoogleDoc" href="#" target="_blank" rel="noopener" hidden>Mở Google Docs ↗</a>
+              </div>
               <div id="writerSetupWorkspace">
                 <div class="writer-layout writer-setup-layout">
                   <div class="writer-settings">
@@ -242,16 +252,6 @@ H2: Câu hỏi thường gặp</textarea></label>
 
               <div class="writer-editor-dashboard" id="writerEditorDashboard" hidden>
                 <div class="editor-topbar panel"><button class="secondary-btn mini-btn" id="backToWriterSetup">← Setup</button><div><strong id="editorDocumentTitle">Untitled content</strong><small id="writerOutputMeta">Revision mới</small></div><span class="save-state" id="editorSaveState">● Đã lưu</span><button class="secondary-btn mini-btn" id="copyWriterOutput">Sao chép</button><select id="writerExportFormat"><option value="html">HTML</option><option value="doc">Word .doc</option><option value="txt">TXT</option><option value="md">Markdown</option><option value="json">JSON</option></select><button class="primary-btn mini-btn" id="exportWriterOutput">Export</button></div>
-                <div class="panel google-doc-bar" id="googleDocBar">
-                  <span class="google-doc-icon">G</span>
-                  <div><strong id="googleDocTitle">Google Docs chưa kết nối</strong><small id="googleDocMeta">Đăng nhập Google Workspace để tạo tài liệu và đồng bộ comment.</small></div>
-                  <span class="google-doc-state disconnected" id="googleDocState">Chưa kết nối</span>
-                  <button class="secondary-btn mini-btn" id="googleConnect" type="button">Kết nối Google</button>
-                  <button class="secondary-btn mini-btn" id="createGoogleDoc" type="button" hidden>Tạo Google Doc</button>
-                  <button class="secondary-btn mini-btn" id="syncGoogleDoc" type="button" hidden>↑ Gửi lên Docs</button>
-                  <button class="secondary-btn mini-btn" id="pullGoogleDoc" type="button" hidden>↓ Lấy từ Docs</button>
-                  <a class="primary-btn mini-btn google-open-link" id="openGoogleDoc" href="#" target="_blank" rel="noopener" hidden>Mở Google Docs ↗</a>
-                </div>
                 <div class="editor-workspace">
                   <main class="panel article-editor-panel">
                     <div class="editor-toolbar" id="editorToolbar"><select data-format-block><option value="p">Paragraph</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option></select><button data-command="bold" title="Bold"><b>B</b></button><button data-command="italic" title="Italic"><i>I</i></button><button data-command="justifyLeft" title="Align left">☰</button><button data-command="insertUnorderedList" title="Bullet list">☷</button><button data-command="createLink" title="Link">↗</button><button data-command="undo" title="Undo">↶</button><button data-command="redo" title="Redo">↷</button><span></span><button id="openReviewFromEditor">✓ Review</button><button id="openAuditFromEditor">⌁ Audit</button></div>
