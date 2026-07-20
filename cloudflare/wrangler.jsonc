@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dol-marketing-os-seo-proxy",
+  "main": "seo-proxy-worker.js",
+  "compatibility_date": "2026-07-20",
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "mkt.dolenglish.us/seo",
+      "zone_name": "dolenglish.us"
+    },
+    {
+      "pattern": "mkt.dolenglish.us/seo/*",
+      "zone_name": "dolenglish.us"
+    }
+  ]
+}
