@@ -28,14 +28,16 @@ projectSwitcher.addEventListener("click", () => {
   projectSwitcher.setAttribute("aria-expanded", String(open));
 });
 
-function navigate(view) {
+function navigate(view, route = view) {
   const target = document.querySelector(`#view-${view}`) || document.querySelector("#view-overview");
   document.querySelectorAll(".view").forEach((item) => item.classList.remove("active"));
   target.classList.add("active");
   document.querySelectorAll(".nav-item[data-view]").forEach((item) => {
     item.classList.toggle("active", item.dataset.view === view);
   });
-  history.replaceState(null, "", `#${view}`);
+  document.querySelector("#contentNavToggle")?.classList.toggle("active", view === "content");
+  if (view === "content") document.querySelector("#contentNavGroup")?.classList.add("open");
+  history.replaceState(null, "", `#${route}`);
   window.scrollTo({ top: 0, behavior: "smooth" });
   sidebar.classList.remove("open");
 }
@@ -44,7 +46,18 @@ document.querySelectorAll("[data-view]").forEach((item) => item.addEventListener
   event.preventDefault();
   navigate(item.dataset.view);
 }));
-document.querySelectorAll("[data-view-jump]").forEach((item) => item.addEventListener("click", () => navigate(item.dataset.viewJump)));
+document.querySelectorAll("[data-view-jump]").forEach((item) => item.addEventListener("click", () => item.dataset.viewJump === "content" ? navigateContent("writer") : navigate(item.dataset.viewJump)));
+
+document.querySelector("#contentNavToggle")?.addEventListener("click", () => {
+  const group = document.querySelector("#contentNavGroup");
+  const open = group.classList.toggle("open");
+  document.querySelector("#contentNavToggle").setAttribute("aria-expanded", String(open));
+});
+
+document.querySelectorAll("[data-content-route]").forEach((item) => item.addEventListener("click", (event) => {
+  event.preventDefault();
+  navigateContent(item.dataset.contentRoute);
+}));
 
 document.querySelector("#menuToggle").addEventListener("click", () => sidebar.classList.add("open"));
 document.querySelector("#sidebarClose").addEventListener("click", () => sidebar.classList.remove("open"));
@@ -56,7 +69,7 @@ document.querySelectorAll('[data-action="create"]').forEach((button) => button.a
 document.querySelector('[data-action="new-content"]').addEventListener("click", () => showToast("Content job mới", "Chọn template để bắt đầu."));
 document.querySelector("#modalClose").addEventListener("click", closeModal);
 modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
-document.querySelectorAll("[data-modal-jump]").forEach((item) => item.addEventListener("click", () => { closeModal(); navigate(item.dataset.modalJump); }));
+document.querySelectorAll("[data-modal-jump]").forEach((item) => item.addEventListener("click", () => { closeModal(); item.dataset.modalJump === "content" ? navigateContent("writer") : navigate(item.dataset.modalJump); }));
 
 function closeModal() {
   modal.classList.remove("open");
@@ -75,21 +88,37 @@ function showToast(title, message) {
 // Content Studio
 const defaultSystemPrompt = "Bạn là Senior Content Specialist của DOL English. Hãy viết chính xác, hữu ích, có chiều sâu học thuật nhưng dễ hiểu. Tuân thủ DOL Brand Voice và phương pháp Linearthinking: chia nhỏ vấn đề, giải thích logic, đưa ví dụ đối chiếu và không bịa dữ kiện. Nội dung phải nguyên bản, tự nhiên, không dùng các câu sáo rỗng của AI.";
 let contentSessionToken = "";
+const contentRoutes = {
+  keywords: { eyebrow: "SEO DISCOVERY", title: "Keywords Research", description: "Khám phá, phân nhóm và ưu tiên keyword cho từng dự án DOL." },
+  outline: { eyebrow: "CONTENT STRATEGY", title: "Outline Content", description: "Xây cấu trúc bài theo search intent, entities và topical coverage." },
+  writer: { eyebrow: "AI WRITING WORKSPACE", title: "Writer Content", description: "Viết content bằng system prompt, brand voice và tiêu chuẩn on-page của DOL." },
+  review: { eyebrow: "EDITORIAL QUALITY", title: "Review Content", description: "Kiểm duyệt brand voice, logic, học thuật và độ tự nhiên trước khi xuất bản." },
+  audit: { eyebrow: "ON-PAGE QUALITY", title: "Audit Content", description: "Đánh giá SEO, cấu trúc, readability và cơ hội cải thiện nội dung." },
+};
 
 function switchContentTab(tab) {
-  document.querySelectorAll(".content-tab").forEach((button) => button.classList.toggle("active", button.dataset.contentTab === tab));
+  const route = contentRoutes[tab] ? tab : "writer";
+  document.querySelectorAll("[data-content-route]").forEach((item) => item.classList.toggle("active", item.dataset.contentRoute === route));
   document.querySelectorAll(".content-workflow").forEach((panel) => {
-    const active = panel.id === `content-${tab}`;
+    const active = panel.id === `content-${route}`;
     panel.hidden = !active;
     panel.classList.toggle("active", active);
   });
-  if ((tab === "review" || tab === "audit") && document.querySelector("#writerOutput")?.innerText.trim()) {
-    const target = document.querySelector(tab === "review" ? "#reviewInput" : "#auditInput");
+  const meta = contentRoutes[route];
+  document.querySelector("#contentEyebrow").textContent = meta.eyebrow;
+  document.querySelector("#contentPageTitle").textContent = meta.title;
+  document.querySelector("#contentPageDescription").textContent = meta.description;
+  if ((route === "review" || route === "audit") && document.querySelector("#writerOutput")?.innerText.trim()) {
+    const target = document.querySelector(route === "review" ? "#reviewInput" : "#auditInput");
     if (target && !target.value.trim()) target.value = document.querySelector("#writerOutput").innerText.trim();
   }
 }
 
-document.querySelectorAll(".content-tab").forEach((button) => button.addEventListener("click", () => switchContentTab(button.dataset.contentTab)));
+function navigateContent(route = "writer") {
+  const safeRoute = contentRoutes[route] ? route : "writer";
+  switchContentTab(safeRoute);
+  navigate("content", `content/${safeRoute}`);
+}
 
 async function connectContentGateway() {
   const input = document.querySelector("#contentAdminToken");
@@ -270,7 +299,7 @@ document.querySelector("#outlineToWriter")?.addEventListener("click", () => {
   const outline = document.querySelector("#outlineResult").innerText.trim();
   if (!outline) return showToast("Outline đang trống", "Hãy tạo hoặc nhập outline trước.");
   document.querySelector("#writerOutline").value = outline;
-  switchContentTab("writer");
+  navigateContent("writer");
   showToast("Đã chuyển outline", "Outline đã được đưa vào Content Brief.");
 });
 
@@ -331,8 +360,9 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeModal();
 });
 
-const initialView = location.hash.replace("#", "") || "overview";
-navigate(initialView);
+const initialRoute = location.hash.replace("#", "") || "overview";
+if (initialRoute === "content" || initialRoute.startsWith("content/")) navigateContent(initialRoute.split("/")[1] || "writer");
+else navigate(initialRoute);
 
 // OpenRouter AI Gateway
 const openRouterCategories = [
