@@ -16,6 +16,7 @@ The `cloudflare/` directory contains the isolated edge proxy for the exact `mkt.
 - Writer Setup v2 with custom keyword, wordcount, brand voice, style, selectable/editable system prompts, AI/manual outline, and AI-generated Title, H1, URL and Description
 - Post-generation editor dashboard with formatting toolbar, live SEO scoring, SERP preview, content autosave and inspector tabs
 - Browser Content Library for generated revisions with HTML, DOC, TXT, Markdown and JSON exports
+- Google Workspace integration for per-user OAuth, native Google Doc creation, two-way content sync, Drive comments/replies/resolution and direct editing in Google Docs
 - Secure Content Agent backend using `OPENROUTER_CONTENT_KEY`, plus HTML, Word-compatible DOC and TXT export
 - SEO Suite
 - Seeding Operations
@@ -37,6 +38,12 @@ OPENROUTER_SEEDING_KEY
 OPENROUTER_ADS_KEY
 OPENROUTER_CHATBOT_KEY
 OPENROUTER_RESEARCH_KEY
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+GOOGLE_TOKEN_ENCRYPTION_KEY
+GOOGLE_DRIVE_FOLDER_ID
+GOOGLE_DRIVE_SCOPE
+GOOGLE_REDIRECT_URI
 ```
 
 `OPENROUTER_MANAGEMENT_KEY` is sufficient for the usage dashboard because it can list key metadata and account credits. Category keys are used later by their respective generation workflows. API keys submitted through the validation form are never persisted by the application.
@@ -47,6 +54,14 @@ The Content Studio calls `POST /seo/api/content/generate` for all five workflows
 
 AI-generated HTML is sanitized again in the browser before it is inserted into the editable writing canvas. Export is available as clean HTML, plain TXT, or Word-compatible `.doc`.
 OpenRouter models are grouped in the UI with affordable/popular OpenAI models first, followed by Google Gemini, Anthropic Claude and other providers. The catalog remains live rather than hard-coded.
+
+## Google Docs integration
+
+Enable the Google Docs API and Google Drive API in a Google Cloud project, then create a Web application OAuth client. Set its redirect URI to `https://mkt.dolenglish.us/seo/api/google/callback`. Use an internal OAuth consent screen for the DOL Google Workspace organization when available.
+
+`GOOGLE_TOKEN_ENCRYPTION_KEY` must be a long random secret used to encrypt each user's Google OAuth tokens in an HttpOnly cookie. `GOOGLE_DRIVE_FOLDER_ID` is optional; when present, new native Google Docs are created inside that DOL Shared Drive folder. The integration requests the narrow `drive.file` scope plus the Google Docs scope by default, so the app can only manage files it creates or that users explicitly share with it. For a centrally managed Shared Drive folder that cannot be selected by the app, set `GOOGLE_DRIVE_SCOPE=drive`; this broader restricted scope should only be used for the internal DOL Workspace app after admin review.
+
+The web editor remains a working preview. Google Docs is the source of truth for native comments, suggestions and revision history; users open the real document through the `Mở Google Docs` action. The dashboard can push content to Docs, pull the latest text back, and manage Drive comments, replies and resolution states.
 
 ## Run locally
 
