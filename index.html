@@ -242,6 +242,16 @@ H2: Câu hỏi thường gặp</textarea></label>
 
               <div class="writer-editor-dashboard" id="writerEditorDashboard" hidden>
                 <div class="editor-topbar panel"><button class="secondary-btn mini-btn" id="backToWriterSetup">← Setup</button><div><strong id="editorDocumentTitle">Untitled content</strong><small id="writerOutputMeta">Revision mới</small></div><span class="save-state" id="editorSaveState">● Đã lưu</span><button class="secondary-btn mini-btn" id="copyWriterOutput">Sao chép</button><select id="writerExportFormat"><option value="html">HTML</option><option value="doc">Word .doc</option><option value="txt">TXT</option><option value="md">Markdown</option><option value="json">JSON</option></select><button class="primary-btn mini-btn" id="exportWriterOutput">Export</button></div>
+                <div class="panel google-doc-bar" id="googleDocBar">
+                  <span class="google-doc-icon">G</span>
+                  <div><strong id="googleDocTitle">Google Docs chưa kết nối</strong><small id="googleDocMeta">Đăng nhập Google Workspace để tạo tài liệu và đồng bộ comment.</small></div>
+                  <span class="google-doc-state disconnected" id="googleDocState">Chưa kết nối</span>
+                  <button class="secondary-btn mini-btn" id="googleConnect" type="button">Kết nối Google</button>
+                  <button class="secondary-btn mini-btn" id="createGoogleDoc" type="button" hidden>Tạo Google Doc</button>
+                  <button class="secondary-btn mini-btn" id="syncGoogleDoc" type="button" hidden>↑ Gửi lên Docs</button>
+                  <button class="secondary-btn mini-btn" id="pullGoogleDoc" type="button" hidden>↓ Lấy từ Docs</button>
+                  <a class="primary-btn mini-btn google-open-link" id="openGoogleDoc" href="#" target="_blank" rel="noopener" hidden>Mở Google Docs ↗</a>
+                </div>
                 <div class="editor-workspace">
                   <main class="panel article-editor-panel">
                     <div class="editor-toolbar" id="editorToolbar"><select data-format-block><option value="p">Paragraph</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option></select><button data-command="bold" title="Bold"><b>B</b></button><button data-command="italic" title="Italic"><i>I</i></button><button data-command="justifyLeft" title="Align left">☰</button><button data-command="insertUnorderedList" title="Bullet list">☷</button><button data-command="createLink" title="Link">↗</button><button data-command="undo" title="Undo">↶</button><button data-command="redo" title="Redo">↷</button><span></span><button id="openReviewFromEditor">✓ Review</button><button id="openAuditFromEditor">⌁ Audit</button></div>
@@ -249,10 +259,11 @@ H2: Câu hỏi thường gặp</textarea></label>
                     <footer class="editor-footer"><span id="editorWordCount">0 words</span><span>Autosave trên trình duyệt</span></footer>
                   </main>
                   <aside class="panel editor-inspector">
-                    <div class="inspector-tabs"><button class="active" data-inspector-tab="seo">SEO</button><button data-inspector-tab="ai">AI</button><button data-inspector-tab="images">HÌNH ẢNH</button></div>
+                    <div class="inspector-tabs"><button class="active" data-inspector-tab="seo">SEO</button><button data-inspector-tab="ai">AI</button><button data-inspector-tab="images">HÌNH ẢNH</button><button data-inspector-tab="comments">COMMENTS</button></div>
                     <div class="inspector-pane active" id="inspector-seo"><div class="seo-score-head"><span>SEO Score</span><strong id="liveSeoScore">0%</strong></div><div class="seo-score-bar"><i id="liveSeoBar"></i></div><h3>SERP Preview</h3><div class="serp-card"><small id="serpUrl">grammar.dolenglish.vn/...</small><strong id="serpTitle">SEO title</strong><p id="serpDescription">Meta description sẽ hiển thị tại đây.</p></div><h3>Từ khóa</h3><div class="keyword-chip" id="seoKeywordChip">focus keyword</div><div class="live-seo-checklist" id="liveSeoChecklist"></div></div>
                     <div class="inspector-pane" id="inspector-ai" hidden><h3>AI Writing Assistant</h3><p>Chọn đoạn văn trong editor để chạy tác vụ.</p><button data-ai-edit="rewrite">✦ Rewrite tự nhiên hơn</button><button data-ai-edit="expand">＋ Viết mở rộng</button><button data-ai-edit="shorten">− Viết ngắn gọn</button><button data-ai-edit="tone">◎ Áp dụng Brand Voice</button></div>
                     <div class="inspector-pane" id="inspector-images" hidden><h3>Media Assistant</h3><p>Quản lý ảnh minh họa và alt text cho bài viết.</p><div class="image-dropzone">▧<strong>Thêm hình ảnh</strong><small>Upload hoặc kết nối Media Library</small></div></div>
+                    <div class="inspector-pane google-comments-pane" id="inspector-comments" hidden><div class="google-comments-head"><div><h3>Google Docs Comments</h3><p>Comment, reply và trạng thái review từ tài liệu gốc.</p></div><button id="refreshGoogleComments" type="button" title="Tải lại comments">↻</button></div><div class="google-comment-list" id="googleCommentList"><div class="google-comment-empty">Kết nối một Google Doc để xem feedback.</div></div><div class="google-comment-form"><textarea id="googleCommentInput" rows="3" placeholder="Thêm comment vào Google Doc..."></textarea><button class="primary-btn mini-btn" id="addGoogleComment" type="button">Gửi comment</button></div></div>
                   </aside>
                 </div>
               </div>
