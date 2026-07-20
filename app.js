@@ -1,3 +1,5 @@
+const BASE_PATH = "/seo";
+
 const projects = [
   "DOL English", "dolenglish.vn", "tuhoc.dolenglish.vn", "tudien.dolenglish.vn",
   "grammar.dolenglish.vn", "dolthpt.vn", "superlms.dolenglish.vn",
@@ -130,7 +132,7 @@ async function connectContentGateway() {
   button.disabled = true;
   button.textContent = "Đang kiểm tra...";
   try {
-    const response = await fetch("/api/openrouter/usage", { headers: { "X-Admin-Token": contentSessionToken } });
+    const response = await fetch(`${BASE_PATH}/api/openrouter/usage`, { headers: { "X-Admin-Token": contentSessionToken } });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || "Không thể kết nối AI Gateway.");
     dot.classList.add("connected");
@@ -156,7 +158,7 @@ async function loadContentModels() {
   const meta = document.querySelector("#modelMeta");
   if (!select) return;
   try {
-    const response = await fetch("/api/openrouter/models", { headers: { Accept: "application/json" } });
+    const response = await fetch(`${BASE_PATH}/api/openrouter/models`, { headers: { Accept: "application/json" } });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || "Không tải được model.");
     select.innerHTML = payload.models.map((model) => `<option value="${escapeHtml(model.id)}">${escapeHtml(model.name)} · ${escapeHtml(model.provider)}</option>`).join("");
@@ -234,7 +236,7 @@ function sanitizeGeneratedHtml(html) {
 
 async function callContentAgent(payload) {
   if (!contentSessionToken) throw new Error("Hãy kết nối AI Gateway trước khi chạy workflow.");
-  const response = await fetch("/api/content/generate", { method: "POST", headers: { "Content-Type": "application/json", "X-Admin-Token": contentSessionToken }, body: JSON.stringify(payload) });
+  const response = await fetch(`${BASE_PATH}/api/content/generate`, { method: "POST", headers: { "Content-Type": "application/json", "X-Admin-Token": contentSessionToken }, body: JSON.stringify(payload) });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || "Content Agent không thể hoàn thành yêu cầu.");
   return data;
@@ -447,7 +449,7 @@ async function loadOpenRouterUsage() {
   badge.className = "connection-badge checking";
   badge.textContent = "Đang kiểm tra";
   try {
-    const response = await fetch("/api/openrouter/usage", { headers: { Accept: "application/json", "X-Admin-Token": gatewayAdminToken } });
+    const response = await fetch(`${BASE_PATH}/api/openrouter/usage`, { headers: { Accept: "application/json", "X-Admin-Token": gatewayAdminToken } });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || "Không thể tải OpenRouter usage.");
     openRouterKeys = payload.keys || [];
@@ -495,7 +497,7 @@ document.querySelector("#openRouterKeyForm")?.addEventListener("submit", async (
   button.textContent = "Đang kiểm tra OpenRouter...";
   result.hidden = true;
   try {
-    const response = await fetch("/api/openrouter/usage", { method: "POST", headers: { "Content-Type": "application/json", "X-Admin-Token": gatewayAdminToken }, body: JSON.stringify({ apiKey: apiKeyInput.value, category }) });
+    const response = await fetch(`${BASE_PATH}/api/openrouter/usage`, { method: "POST", headers: { "Content-Type": "application/json", "X-Admin-Token": gatewayAdminToken }, body: JSON.stringify({ apiKey: apiKeyInput.value, category }) });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || "API key không hợp lệ.");
     const key = payload.key;
