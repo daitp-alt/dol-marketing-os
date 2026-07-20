@@ -591,6 +591,8 @@ function renderGoogleDocState() {
   const pull = document.querySelector("#pullGoogleDoc");
   const open = document.querySelector("#openGoogleDoc");
   connect.hidden = googleWorkspaceConnected;
+  connect.disabled = !googleWorkspaceConfigured;
+  connect.textContent = googleWorkspaceConfigured ? "Kết nối Google" : "Cần cấu hình OAuth";
   create.hidden = !googleWorkspaceConnected || Boolean(activeGoogleDoc?.id);
   sync.hidden = !googleWorkspaceConnected || !activeGoogleDoc?.id;
   pull.hidden = !googleWorkspaceConnected || !activeGoogleDoc?.id;
