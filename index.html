@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="DOL Marketing OS — internal marketing workspace demo." />
+    <meta name="theme-color" content="#d71920" />
+    <title>DOL Marketing OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand-row">
+          <a class="brand" href="#overview" aria-label="DOL Marketing OS">
+            <span class="brand-mark">D</span>
+            <span><strong>DOL</strong><small>Marketing OS</small></span>
+          </a>
+          <button class="icon-btn sidebar-close" id="sidebarClose" aria-label="Đóng menu">×</button>
+        </div>
+
+        <button class="project-switcher" id="projectSwitcher" aria-expanded="false">
+          <span class="project-icon">DE</span>
+          <span class="project-copy"><small>Workspace</small><strong id="projectName">DOL English</strong></span>
+          <span class="chevron">⌄</span>
+        </button>
+        <div class="project-menu" id="projectMenu"></div>
+
+        <nav class="main-nav" aria-label="Điều hướng chính">
+          <p class="nav-label">Workspace</p>
+          <a class="nav-item active" href="#overview" data-view="overview"><span>⌂</span> Tổng quan</a>
+          <a class="nav-item" href="#inbox" data-view="inbox"><span>⌁</span> Công việc <b>8</b></a>
+
+          <p class="nav-label">Marketing apps</p>
+          <a class="nav-item" href="#seo" data-view="seo"><span>⌕</span> SEO Suite</a>
+          <a class="nav-item" href="#content" data-view="content"><span>✦</span> Content Studio</a>
+          <a class="nav-item" href="#seeding" data-view="seeding"><span>◎</span> Seeding</a>
+          <a class="nav-item" href="#ads" data-view="ads"><span>↗</span> Paid Ads</a>
+          <a class="nav-item" href="#social" data-view="social"><span>◫</span> Social & Campaign</a>
+
+          <p class="nav-label">Collaboration</p>
+          <a class="nav-item" href="#requests" data-view="requests"><span>⇄</span> Yêu cầu <b>5</b></a>
+          <a class="nav-item" href="#resources" data-view="resources"><span>◇</span> Tài nguyên</a>
+          <a class="nav-item" href="#reports" data-view="reports"><span>▥</span> Báo cáo</a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <a class="nav-item" href="#admin" data-view="admin"><span>⚙</span> Quản trị hệ thống</a>
+          <div class="user-card">
+            <span class="avatar">TT</span>
+            <span><strong>Thành Thiện</strong><small>Super Admin</small></span>
+            <button aria-label="Mở menu tài khoản">•••</button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <button class="icon-btn menu-toggle" id="menuToggle" aria-label="Mở menu">☰</button>
+          <label class="global-search">
+            <span>⌕</span>
+            <input id="globalSearch" type="search" placeholder="Tìm tool, chiến dịch, tài nguyên..." />
+            <kbd>⌘ K</kbd>
+          </label>
+          <div class="topbar-actions">
+            <button class="icon-btn" aria-label="Trợ giúp">?</button>
+            <button class="icon-btn notification" aria-label="Thông báo">♢<i></i></button>
+            <button class="primary-btn" data-action="create">＋ Tạo mới</button>
+          </div>
+        </header>
+
+        <div class="page" id="page">
+          <section class="view active" id="view-overview">
+            <div class="page-heading">
+              <div><p class="eyebrow">DOL MARKETING OS</p><h1>Chào buổi trưa, Thiện 👋</h1><p>Đây là những gì đang diễn ra trên toàn hệ thống hôm nay.</p></div>
+              <div class="heading-actions"><button class="secondary-btn">↓ Xuất báo cáo</button><button class="primary-btn" data-action="create">＋ Tạo công việc</button></div>
+            </div>
+
+            <div class="notice"><span>✦</span><div><strong>AI Workspace đang sẵn sàng</strong><p>7 prompt templates và 3 brand voices đã được cấu hình cho DOL English.</p></div><button data-view-jump="content">Mở Content Studio →</button></div>
+
+            <div class="metric-grid">
+              <article class="metric-card"><div class="metric-icon red">⌕</div><span>Organic clicks<small>30 ngày gần nhất</small></span><strong>186.4K</strong><em>↑ 12.8%</em></article>
+              <article class="metric-card"><div class="metric-icon blue">✦</div><span>Content đang chạy<small>Tất cả dự án</small></span><strong>24</strong><em>↑ 6 tuần này</em></article>
+              <article class="metric-card"><div class="metric-icon amber">⇄</div><span>Yêu cầu chờ xử lý<small>Từ các phòng ban</small></span><strong>08</strong><em class="warn">3 ưu tiên cao</em></article>
+              <article class="metric-card"><div class="metric-icon green">↗</div><span>Campaign active<small>Paid & organic</small></span><strong>12</strong><em>ROAS 4.2×</em></article>
+            </div>
+
+            <div class="dashboard-grid">
+              <article class="panel activity-panel">
+                <div class="panel-head"><div><h2>Hiệu suất tổng quan</h2><p>Organic traffic trên tất cả project</p></div><select><option>30 ngày</option><option>90 ngày</option></select></div>
+                <div class="chart-legend"><span><i class="dot red-dot"></i> Clicks</span><span><i class="dot gray-dot"></i> Impressions</span><strong>+12.8% <small>so với kỳ trước</small></strong></div>
+                <div class="chart" aria-label="Biểu đồ hiệu suất mẫu">
+                  <div class="chart-lines"><i></i><i></i><i></i><i></i></div>
+                  <svg viewBox="0 0 720 210" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d71920" stop-opacity=".2"/><stop offset="1" stop-color="#d71920" stop-opacity="0"/></linearGradient></defs><path class="area" d="M0 168 C70 145 90 162 145 132 S235 125 286 90 S390 120 435 73 S530 82 575 49 S665 56 720 20 L720 210 L0 210Z"/><path class="chart-line secondary" d="M0 185 C70 170 95 178 145 160 S235 152 286 130 S390 145 435 115 S530 116 575 88 S665 100 720 71"/><path class="chart-line primary" d="M0 168 C70 145 90 162 145 132 S235 125 286 90 S390 120 435 73 S530 82 575 49 S665 56 720 20"/></svg>
+                  <div class="chart-labels"><span>20/06</span><span>27/06</span><span>04/07</span><span>11/07</span><span>20/07</span></div>
+                </div>
+              </article>
+
+              <article class="panel task-panel">
+                <div class="panel-head"><div><h2>Cần bạn xử lý</h2><p>Ưu tiên hôm nay</p></div><button class="text-btn">Xem tất cả</button></div>
+                <div class="task-list">
+                  <button class="task"><span class="task-type content">✦</span><span><strong>Duyệt 5 bài Grammar</strong><small>Content · grammar.dolenglish.vn</small></span><time>2h</time></button>
+                  <button class="task"><span class="task-type request">⇄</span><span><strong>Brief khóa IELTS 6.5+</strong><small>Yêu cầu từ Sale</small></span><time>4h</time></button>
+                  <button class="task"><span class="task-type seo">⌕</span><span><strong>12 lỗi index mới</strong><small>SEO · dolenglish.vn</small></span><time>1d</time></button>
+                  <button class="task"><span class="task-type ads">↗</span><span><strong>Duyệt Ads copy tháng 8</strong><small>Paid Ads · SuperLMS</small></span><time>1d</time></button>
+                </div>
+              </article>
+            </div>
+
+            <div class="section-head"><div><h2>Ứng dụng của bạn</h2><p>Một workspace, toàn bộ hoạt động Marketing.</p></div><button class="text-btn">Quản lý ứng dụng →</button></div>
+            <div class="app-grid">
+              <button class="app-card" data-view-jump="seo"><span class="app-icon red">⌕</span><span><strong>SEO Suite</strong><small>Keywords, on-page, technical & off-page</small></span><i>→</i></button>
+              <button class="app-card" data-view-jump="content"><span class="app-icon violet">✦</span><span><strong>Content Studio</strong><small>AI workflow theo đúng brand voice</small></span><i>→</i></button>
+              <button class="app-card" data-view-jump="seeding"><span class="app-icon blue">◎</span><span><strong>Seeding</strong><small>Plan, kịch bản, vận hành & báo cáo</small></span><i>→</i></button>
+              <button class="app-card" data-view-jump="ads"><span class="app-icon green">↗</span><span><strong>Paid Ads</strong><small>Meta, Google, budget & performance</small></span><i>→</i></button>
+              <button class="app-card" data-view-jump="requests"><span class="app-icon amber">⇄</span><span><strong>Request Center</strong><small>Sale, Giáo viên và phòng ban</small></span><i>→</i></button>
+              <button class="app-card" data-view-jump="resources"><span class="app-icon slate">◇</span><span><strong>Resource Hub</strong><small>Brand, học thuật, media & knowledge</small></span><i>→</i></button>
+            </div>
+          </section>
+
+          <section class="view" id="view-content">
+            <div class="page-heading"><div><p class="eyebrow purple-text">AI WORKSPACE</p><h1>Content Studio</h1><p>Biến prompt và tri thức DOL thành nội dung nhất quán, có kiểm soát.</p></div><div class="heading-actions"><button class="secondary-btn">Prompt Library</button><button class="primary-btn" data-action="new-content">＋ Tạo content</button></div></div>
+            <div class="workflow-steps"><span class="done"><i>1</i>Thiết lập</span><b></b><span class="active"><i>2</i>Prompt & Context</span><b></b><span><i>3</i>Generate</span><b></b><span><i>4</i>Review</span><b></b><span><i>5</i>Publish</span></div>
+            <div class="studio-layout">
+              <div class="studio-main">
+                <article class="panel form-panel">
+                  <div class="panel-head"><div><h2>Thiết lập nội dung</h2><p>Chọn template, voice và model phù hợp.</p></div><span class="status-pill draft">Bản nháp</span></div>
+                  <div class="form-grid two"><label>Project<select id="studioProject"><option>grammar.dolenglish.vn</option><option>dolenglish.vn</option><option>tuhoc.dolenglish.vn</option><option>tudien.dolenglish.vn</option></select></label><label>Loại nội dung<select><option>SEO Long-form Article</option><option>Landing Page</option><option>Social Post</option><option>Ads Copy</option></select></label></div>
+                  <label>Prompt template<select><option>Grammar SEO Article v2.3</option><option>IELTS Course Landing Page v1.8</option><option>Social Education Post v3.1</option></select></label>
+                  <div class="form-grid two"><label>Brand voice<select><option>DOL Academic — Dễ hiểu & chuyên sâu</option><option>DOL Global — Thông minh & gần gũi</option><option>DOL Performance — Trực diện & thuyết phục</option></select></label><label>AI model<select><option>GPT-5.6 Terra · Recommended</option><option>GPT-5.6 Luna · Fast</option><option>GPT-5.6 Sol · Premium</option></select></label></div>
+                </article>
+                <article class="panel form-panel">
+                  <div class="panel-head"><div><h2>Biến đầu vào</h2><p>Tự động nhận diện từ prompt template.</p></div><span class="variable-count">6 biến</span></div>
+                  <label>Keyword chính<input value="thì quá khứ hoàn thành" /></label>
+                  <div class="form-grid two"><label>Đối tượng<input value="Học sinh IELTS 5.0–6.5" /></label><label>Search intent<select><option>Informational</option><option>Commercial</option></select></label></div>
+                  <label>Góc tiếp cận<textarea rows="3">Giải thích bằng tư duy Linearthinking, có ví dụ đối chiếu với thì quá khứ đơn.</textarea></label>
+                  <div class="form-grid two"><label>Độ dài<input value="2.000–2.500 từ" /></label><label>CTA<input value="Làm bài tập miễn phí" /></label></div>
+                </article>
+              </div>
+              <aside class="studio-side">
+                <article class="panel context-card"><div class="panel-head"><div><h2>Context đang dùng</h2><p>AI chỉ đọc tài nguyên được cấp quyền.</p></div></div><div class="context-item"><span>◇</span><div><strong>DOL Brand Guidelines</strong><small>Global · v4.2</small></div><b>✓</b></div><div class="context-item"><span>▤</span><div><strong>Grammar Knowledge Base</strong><small>218 tài liệu</small></div><b>✓</b></div><div class="context-item"><span>✦</span><div><strong>Linearthinking Rules</strong><small>Academic approved</small></div><b>✓</b></div><button class="secondary-btn wide">＋ Thêm tài nguyên</button></article>
+                <article class="panel prompt-preview"><div class="panel-head"><div><h2>Prompt preview</h2><p>Đã ghép voice + context + variables.</p></div><button class="text-btn">Xem đầy đủ</button></div><pre>You are a DOL English content specialist.
+
+Write an SEO article about:
+{{keyword}}
+
+Follow DOL Academic voice and
+Linearthinking methodology...</pre><div class="token-row"><span>Ước tính 4.200 tokens</span><strong>~ $0.03</strong></div></article>
+                <button class="generate-btn" id="generateDemo"><span>✦</span><span><strong>Generate content</strong><small>Tạo revision mới, không ghi đè</small></span><i>→</i></button>
+              </aside>
+            </div>
+          </section>
+
+          <section class="view" id="view-seo">
+            <div class="page-heading"><div><p class="eyebrow">ORGANIC GROWTH</p><h1>SEO Suite</h1><p>Quản lý chiến lược tìm kiếm cho từng dự án DOL.</p></div><div class="heading-actions"><button class="secondary-btn">Kết nối dữ liệu</button><button class="primary-btn">＋ Keyword research</button></div></div>
+            <div class="metric-grid compact"><article class="metric-card"><span>Keywords theo dõi</span><strong>12,840</strong><em>↑ 428 tháng này</em></article><article class="metric-card"><span>Top 3 Google</span><strong>1,286</strong><em>↑ 8.4%</em></article><article class="metric-card"><span>SEO health</span><strong>91<span>/100</span></strong><em>Tốt</em></article><article class="metric-card"><span>Issues cần xử lý</span><strong>37</strong><em class="warn">12 critical</em></article></div>
+            <div class="section-head"><div><h2>SEO workflows</h2><p>Cùng một bộ kỹ năng, cấu hình riêng theo project.</p></div></div>
+            <div class="tool-grid">
+              <article class="tool-card"><span class="app-icon red">⌕</span><h3>Keyword Research</h3><p>Khám phá, gom nhóm và đánh giá cơ hội keyword.</p><div><small>12.8K keywords</small><button>Open →</button></div></article>
+              <article class="tool-card"><span class="app-icon blue">⌘</span><h3>Topical Map</h3><p>Xây topic cluster và mapping keyword → URL.</p><div><small>42 clusters</small><button>Open →</button></div></article>
+              <article class="tool-card"><span class="app-icon amber">◫</span><h3>On-page SEO</h3><p>Audit title, heading, entity, internal link và schema.</p><div><small>184 pages</small><button>Open →</button></div></article>
+              <article class="tool-card"><span class="app-icon violet">⚡</span><h3>Technical SEO</h3><p>Crawl, indexability, performance và sitemap health.</p><div><small>37 issues</small><button>Open →</button></div></article>
+            </div>
+            <article class="panel table-panel"><div class="panel-head"><div><h2>Project performance</h2><p>Dữ liệu minh họa · 30 ngày gần nhất</p></div><button class="text-btn">Xem báo cáo đầy đủ</button></div><div class="table-wrap"><table><thead><tr><th>Project</th><th>Clicks</th><th>Impressions</th><th>Avg. position</th><th>Health</th><th></th></tr></thead><tbody><tr><td><span class="site-badge">DE</span><strong>dolenglish.vn</strong></td><td>84,210</td><td>2.4M</td><td>7.8 <em>↑</em></td><td><span class="score good">94</span></td><td>•••</td></tr><tr><td><span class="site-badge blue-bg">GR</span><strong>grammar.dolenglish.vn</strong></td><td>46,185</td><td>1.8M</td><td>6.2 <em>↑</em></td><td><span class="score good">91</span></td><td>•••</td></tr><tr><td><span class="site-badge amber-bg">TD</span><strong>tudien.dolenglish.vn</strong></td><td>38,620</td><td>1.2M</td><td>8.1 <em>↓</em></td><td><span class="score medium">83</span></td><td>•••</td></tr><tr><td><span class="site-badge green-bg">TH</span><strong>dolthpt.vn</strong></td><td>17,404</td><td>684K</td><td>12.4 <em>↑</em></td><td><span class="score medium">86</span></td><td>•••</td></tr></tbody></table></div></article>
+          </section>
+
+          <section class="view" id="view-seeding">
+            <div class="page-heading"><div><p class="eyebrow blue-text">COMMUNITY</p><h1>Seeding Operations</h1><p>Lập kế hoạch, kịch bản, phân công và đo lường trên một luồng.</p></div><button class="primary-btn">＋ Tạo chiến dịch</button></div>
+            <div class="kanban">
+              <div class="kanban-col"><div class="kanban-head"><span>Ý tưởng</span><b>3</b></div><article><small>THẢO LUẬN CỘNG ĐỒNG</small><h3>IELTS Writing: học template hay tư duy?</h3><p>8 persona · 24 comments</p><footer><span class="avatar tiny">HN</span><time>22/07</time></footer></article><article><small>REVIEW</small><h3>Trải nghiệm học thử SuperLMS</h3><p>Facebook Groups · 12 threads</p><footer><span class="avatar tiny">MK</span><time>25/07</time></footer></article></div>
+              <div class="kanban-col"><div class="kanban-head"><span>Đang soạn kịch bản</span><b>2</b></div><article><small>BACK TO SCHOOL</small><h3>Chọn trung tâm IELTS cho học sinh THPT</h3><p>Script v2 · Chờ Academic review</p><footer><span class="avatar tiny">LA</span><time>Hôm nay</time></footer></article></div>
+              <div class="kanban-col"><div class="kanban-head"><span>Đang triển khai</span><b>4</b></div><article class="accent-card"><small>GRAMMAR AWARENESS</small><h3>“Used to” và “Be used to”</h3><p>18/30 actions hoàn thành</p><div class="progress"><i style="width:60%"></i></div><footer><div class="avatars"><span class="avatar tiny">HT</span><span class="avatar tiny">QL</span></div><time>3 ngày</time></footer></article><article><small>IELTS 6.5+</small><h3>Hành trình tăng 1 band trong 3 tháng</h3><p>42/60 actions hoàn thành</p><footer><span class="avatar tiny">HN</span><time>5 ngày</time></footer></article></div>
+              <div class="kanban-col"><div class="kanban-head"><span>Hoàn thành</span><b>12</b></div><article><small>DOL THPT</small><h3>Ôn thi tiếng Anh THPT 2026</h3><p>Reach 128K · 846 interactions</p><footer><span class="status-pill success">Đạt mục tiêu</span><time>18/07</time></footer></article></div>
+            </div>
+          </section>
+
+          <section class="view" id="view-requests">
+            <div class="page-heading"><div><p class="eyebrow amber-text">COLLABORATION</p><h1>Request Center</h1><p>Một cổng nhận yêu cầu Marketing cho toàn bộ phòng ban.</p></div><button class="primary-btn">＋ Gửi yêu cầu</button></div>
+            <div class="request-layout"><aside class="request-stats"><article><span>08</span><p>Đang xử lý</p></article><article><span>05</span><p>Chờ phân loại</p></article><article><span>03</span><p>Cần bạn duyệt</p></article><article><span>94%</span><p>Đúng SLA</p></article></aside><article class="panel table-panel"><div class="panel-head"><div><h2>Yêu cầu gần đây</h2><p>Sale, Academic, CSKH và các phòng ban.</p></div><div class="filter-tabs"><button class="active">Tất cả</button><button>Của tôi</button></div></div><div class="table-wrap"><table><thead><tr><th>Yêu cầu</th><th>Phòng ban</th><th>Project</th><th>Ưu tiên</th><th>Trạng thái</th><th>Hạn</th></tr></thead><tbody><tr><td><strong>Landing page IELTS 6.5+</strong><small>#REQ-0284 · Nguyễn Minh Anh</small></td><td>Sale</td><td>dolenglish.vn</td><td><span class="priority high">Cao</span></td><td><span class="status-pill progress-status">Đang làm</span></td><td>Hôm nay</td></tr><tr><td><strong>Kiểm duyệt 10 bài Grammar</strong><small>#REQ-0283 · Trần Hoàng</small></td><td>Academic</td><td>grammar</td><td><span class="priority medium">Trung bình</span></td><td><span class="status-pill review-status">Chờ duyệt</span></td><td>22/07</td></tr><tr><td><strong>Content giải đáp học phí</strong><small>#REQ-0280 · Lê Phương</small></td><td>CSKH</td><td>dolenglish.vn</td><td><span class="priority low">Thường</span></td><td><span class="status-pill draft">Mới</span></td><td>24/07</td></tr><tr><td><strong>Creative khai giảng tháng 8</strong><small>#REQ-0278 · Mai Chi</small></td><td>Marketing</td><td>SuperLMS</td><td><span class="priority high">Cao</span></td><td><span class="status-pill progress-status">Đang làm</span></td><td>23/07</td></tr></tbody></table></div></article></div>
+          </section>
+
+          <section class="view" id="view-resources">
+            <div class="page-heading"><div><p class="eyebrow green-text">KNOWLEDGE</p><h1>Resource Hub</h1><p>Nguồn sự thật dùng chung cho con người và AI.</p></div><button class="primary-btn">＋ Thêm tài nguyên</button></div>
+            <div class="resource-folders"><article><span>◈</span><strong>Brand & Identity</strong><small>24 tài nguyên · cập nhật hôm qua</small></article><article><span>▤</span><strong>Academic Knowledge</strong><small>1.284 tài nguyên · 8 collections</small></article><article><span>◫</span><strong>Media Library</strong><small>846 ảnh & video</small></article><article><span>✦</span><strong>Prompt Library</strong><small>37 templates · 12 workflows</small></article><article><span>▣</span><strong>Course Information</strong><small>18 chương trình đang hoạt động</small></article><article><span>◇</span><strong>Research & Insights</strong><small>92 reports · 14 datasets</small></article></div>
+          </section>
+
+          <section class="view placeholder-view" id="view-inbox"><div class="placeholder-icon">⌁</div><h1>Công việc của tôi</h1><p>Tập trung task, approval và notification từ mọi module.</p><button class="primary-btn">Xem 8 công việc</button></section>
+          <section class="view placeholder-view" id="view-ads"><div class="placeholder-icon">↗</div><h1>Paid Ads</h1><p>Meta Ads, Google Ads, creative workflow, budget và performance.</p><div class="coming"><span>Module blueprint</span><strong>Đã sẵn sàng để phát triển</strong></div></section>
+          <section class="view placeholder-view" id="view-social"><div class="placeholder-icon">◫</div><h1>Social & Campaign</h1><p>Content calendar, campaign planning, publishing và analytics.</p><div class="coming"><span>Module blueprint</span><strong>Đã sẵn sàng để phát triển</strong></div></section>
+          <section class="view placeholder-view" id="view-reports"><div class="placeholder-icon">▥</div><h1>Unified Reports</h1><p>Báo cáo đa project cho Organic, Content, Community và Paid Media.</p><div class="coming"><span>Module blueprint</span><strong>Đã sẵn sàng để phát triển</strong></div></section>
+          <section class="view placeholder-view" id="view-admin"><div class="placeholder-icon">⚙</div><h1>Quản trị hệ thống</h1><p>Users, roles, project access, tool registry, integrations và audit log.</p><div class="role-preview"><span>Super Admin</span><span>Project Admin</span><span>Module Manager</span><span>Operator</span><span>Reviewer</span><span>Requester</span></div></section>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button class="modal-close" id="modalClose" aria-label="Đóng">×</button>
+        <span class="modal-icon">＋</span><h2 id="modalTitle">Bạn muốn tạo gì?</h2><p>Bắt đầu workflow mới trong project hiện tại.</p>
+        <div class="create-grid"><button data-modal-jump="content"><span>✦</span><strong>Content</strong><small>Article, social, ads copy</small></button><button data-modal-jump="seo"><span>⌕</span><strong>SEO Research</strong><small>Keyword, audit, topical map</small></button><button data-modal-jump="seeding"><span>◎</span><strong>Seeding</strong><small>Plan và kịch bản</small></button><button data-modal-jump="requests"><span>⇄</span><strong>Yêu cầu</strong><small>Gửi đến Marketing</small></button></div>
+      </div>
+    </div>
+    <div class="toast" id="toast"><span>✓</span><div><strong>Đã tạo content job</strong><small>Revision #1 đang được chuẩn bị.</small></div></div>
+    <script src="app.js"></script>
+  </body>
+</html>
