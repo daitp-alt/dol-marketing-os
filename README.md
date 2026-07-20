@@ -10,9 +10,8 @@ The `cloudflare/` directory contains the isolated edge proxy for the exact `mkt.
 
 - Multi-project workspace and project switcher
 - Marketing overview dashboard
-- Content Studio with six AI workflows: Keywords Research, Outline, Content Chatbot, Writer, Review and Audit
+- Content Studio with five AI workflows: Keywords Research, Outline, Writer, Review and Audit
 - Expandable Content Tools sidebar with a dedicated route and workspace for each workflow
-- ChatGPT-style Content Chatbot with multi-turn context, model selection, editable system prompt, stop/copy controls, prompt suggestions and browser conversation history
 - Writer canvas with editable system prompt, live OpenRouter model catalog, DOL brand voice, writing style and on-page guardrails
 - Writer Setup v2 with custom keyword, wordcount, brand voice, style, selectable/editable system prompts, AI/manual outline, and AI-generated Title, H1, URL and Description
 - Post-generation editor dashboard with formatting toolbar, live SEO scoring, SERP preview, content autosave and inspector tabs
@@ -44,7 +43,7 @@ OPENROUTER_RESEARCH_KEY
 
 ## Content Agent
 
-The Content Studio calls `POST /seo/api/content/generate` for all six workflows. Requests require the `AI_GATEWAY_ADMIN_TOKEN` in the `X-Admin-Token` header, while the OpenRouter key stays server-side in `OPENROUTER_CONTENT_KEY`. Chat history is limited and sanitized server-side before being forwarded to OpenRouter. The model selector is synchronized from OpenRouter `GET /api/v1/models` through the server-side `/seo/api/openrouter/models` endpoint.
+The Content Studio calls `POST /seo/api/content/generate` for all five workflows. Requests require the `AI_GATEWAY_ADMIN_TOKEN` in the `X-Admin-Token` header, while the OpenRouter key stays server-side in `OPENROUTER_CONTENT_KEY`. The model selector is synchronized from OpenRouter `GET /api/v1/models` through the server-side `/seo/api/openrouter/models` endpoint.
 
 AI-generated HTML is sanitized again in the browser before it is inserted into the editable writing canvas. Export is available as clean HTML, plain TXT, or Word-compatible `.doc`.
 OpenRouter models are grouped in the UI with affordable/popular OpenAI models first, followed by Google Gemini, Anthropic Claude and other providers. The catalog remains live rather than hard-coded.
