@@ -31,3 +31,4 @@
 @media(max-width:600px){.google-doc-bar>div{flex-basis:calc(100% - 45px)}.google-doc-state{margin-left:40px}.google-doc-bar button,.google-open-link{flex:1;justify-content:center}}
 
 .google-comment-actions{display:flex;gap:5px}.google-comment-actions button{border:1px solid #e1e4e8;border-radius:6px;background:#fff;padding:4px 7px;color:#65707b;font-size:7px}.google-comment-actions button:hover{color:#2467d1;border-color:#c8d9f4}
+.google-doc-bar{margin-bottom:12px}
