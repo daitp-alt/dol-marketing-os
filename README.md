@@ -2,6 +2,8 @@
 
 Interactive, responsive UI concept for DOL English's internal Marketing Operating System.
 
+Production base path: `https://mkt.dolenglish.us/seo`. All UI assets and browser API requests are namespaced under `/seo/*` so the existing DOL MKT Search routes remain isolated.
+
 ## Included modules
 
 - Multi-project workspace and project switcher
@@ -36,7 +38,7 @@ OPENROUTER_RESEARCH_KEY
 
 ## Content Agent
 
-The Content Studio calls `POST /api/content/generate` for all five workflows. Requests require the `AI_GATEWAY_ADMIN_TOKEN` in the `X-Admin-Token` header, while the OpenRouter key stays server-side in `OPENROUTER_CONTENT_KEY`. The model selector is synchronized from `GET /api/v1/models` through the server-side `/api/openrouter/models` endpoint.
+The Content Studio calls `POST /seo/api/content/generate` for all five workflows. Requests require the `AI_GATEWAY_ADMIN_TOKEN` in the `X-Admin-Token` header, while the OpenRouter key stays server-side in `OPENROUTER_CONTENT_KEY`. The model selector is synchronized from OpenRouter `GET /api/v1/models` through the server-side `/seo/api/openrouter/models` endpoint.
 
 AI-generated HTML is sanitized again in the browser before it is inserted into the editable writing canvas. Export is available as clean HTML, plain TXT, or Word-compatible `.doc`.
 
