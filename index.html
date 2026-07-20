@@ -168,60 +168,96 @@
             </div>
 
             <div class="content-workflow active" id="content-writer">
-              <div class="writer-layout">
-                <div class="writer-settings">
-                  <article class="panel content-config-card form-panel">
-                    <div class="panel-head"><div><h2>Writer setup</h2><p>Cấu hình project, model và cách AI viết.</p></div><span class="status-pill draft">Revision #1</span></div>
-                    <div class="form-grid two"><label>Project<select id="writerProject"><option>dolenglish.vn</option><option>tuhoc.dolenglish.vn</option><option>tudien.dolenglish.vn</option><option selected>grammar.dolenglish.vn</option><option>dolthpt.vn</option><option>superlms.dolenglish.vn</option></select></label><label>Loại content<select id="writerType"><option>SEO Long-form Article</option><option>Landing Page</option><option>Blog chuyên môn</option><option>Social Education Post</option><option>Ads Copy</option></select></label></div>
-                    <label>AI model<select id="writerModel"><option value="openai/gpt-4.1">Đang tải model từ OpenRouter...</option></select><small class="field-help" id="modelMeta">Model catalog được đồng bộ trực tiếp từ OpenRouter.</small></label>
-                    <div class="form-grid two"><label>Brand voice<select id="writerVoice"><option>DOL Academic · Dễ hiểu & chuyên sâu</option><option>DOL Global · Thông minh & gần gũi</option><option>DOL Performance · Trực diện & thuyết phục</option><option>Tuỳ chỉnh trong system prompt</option></select></label><label>Phong cách<select id="writerStyle"><option>Giải thích có hệ thống</option><option>Storytelling giáo dục</option><option>Chuyên gia tư vấn</option><option>Conversational</option><option>Thuyết phục chuyển đổi</option></select></label></div>
-                    <div class="form-grid two"><label>Temperature<input id="writerTemperature" type="number" min="0" max="2" step="0.1" value="0.5" /></label><label>Độ dài mục tiêu<input id="writerLength" value="2.000–2.500 từ" /></label></div>
-                  </article>
+              <div id="writerSetupWorkspace">
+                <div class="writer-layout writer-setup-layout">
+                  <div class="writer-settings">
+                    <article class="panel content-config-card form-panel">
+                      <div class="panel-head"><div><h2>01 · Bài viết & model</h2><p>Thiết lập đầu vào chính cho Content Agent.</p></div><span class="status-pill draft">Custom 100%</span></div>
+                      <label>Keyword chính của bài viết<input id="writerKeyword" value="thì quá khứ hoàn thành" placeholder="Nhập focus keyword" /></label>
+                      <div class="form-grid two"><label>Project<select id="writerProject"><option>dolenglish.vn</option><option>tuhoc.dolenglish.vn</option><option>tudien.dolenglish.vn</option><option selected>grammar.dolenglish.vn</option><option>dolthpt.vn</option><option>superlms.dolenglish.vn</option></select></label><label>Loại content<select id="writerType"><option>SEO Long-form Article</option><option>Landing Page</option><option>Blog chuyên môn</option><option>Social Education Post</option><option>Ads Copy</option></select></label></div>
+                      <label>AI model viết bài<select id="writerModel" class="ai-model-select"><option value="openai/gpt-4.1-mini">Đang tải model từ OpenRouter...</option></select><small class="field-help" id="modelMeta">Ưu tiên OpenAI tiết kiệm → Gemini → Claude.</small></label>
+                      <div class="form-grid two"><label>Wordcount<input id="writerLength" type="number" min="300" max="10000" step="100" value="2200" /></label><label>Temperature<input id="writerTemperature" type="number" min="0" max="2" step="0.1" value="0.5" /></label></div>
+                    </article>
 
-                  <article class="panel content-config-card form-panel">
-                    <div class="panel-head"><div><h2>System prompt</h2><p>Quy định cố định cho vai trò và cách xử lý của AI.</p></div><button class="text-btn" id="resetSystemPrompt">Khôi phục mẫu</button></div>
-                    <textarea id="writerSystemPrompt" rows="8">Bạn là Senior Content Specialist của DOL English. Hãy viết chính xác, hữu ích, có chiều sâu học thuật nhưng dễ hiểu. Tuân thủ DOL Brand Voice và phương pháp Linearthinking: chia nhỏ vấn đề, giải thích logic, đưa ví dụ đối chiếu và không bịa dữ kiện. Nội dung phải nguyên bản, tự nhiên, không dùng các câu sáo rỗng của AI.</textarea>
-                  </article>
+                    <article class="panel content-config-card form-panel">
+                      <div class="panel-head"><div><h2>02 · Brand voice & phong cách</h2><p>Chọn preset rồi chỉnh lại bất kỳ nội dung nào.</p></div><span class="agent-chip">Editable</span></div>
+                      <div class="form-grid two"><label>Brand voice preset<select id="writerVoicePreset"><option value="academic">DOL Academic</option><option value="friendly">DOL Friendly</option><option value="performance">DOL Performance</option><option value="custom">Custom</option></select></label><label>Phong cách preset<select id="writerStylePreset"><option value="systematic">Giải thích có hệ thống</option><option value="storytelling">Storytelling giáo dục</option><option value="expert">Chuyên gia tư vấn</option><option value="conversational">Conversational</option><option value="conversion">Thuyết phục chuyển đổi</option><option value="custom">Custom</option></select></label></div>
+                      <label>Brand voice custom<textarea id="writerVoice" rows="3">Chuyên sâu nhưng dễ hiểu; thông minh, chân thành; giải thích logic thay vì áp đặt; giữ chất học thuật của DOL.</textarea></label>
+                      <label>Phong cách custom<textarea id="writerStyle" rows="3">Giải thích có hệ thống bằng Linearthinking, dùng ví dụ đối chiếu và câu văn tự nhiên.</textarea></label>
+                    </article>
 
-                  <article class="panel content-config-card form-panel">
-                    <div class="panel-head"><div><h2>Content brief</h2><p>Input chính được ghép cùng system prompt.</p></div><span class="variable-count">Brief</span></div>
-                    <label>Tiêu đề / chủ đề<input id="writerTitle" value="Thì quá khứ hoàn thành (Past Perfect): Công thức, cách dùng và bài tập" /></label>
-                    <label>Keyword chính<input id="writerKeyword" value="thì quá khứ hoàn thành" /></label>
-                    <label>Outline<textarea id="writerOutline" rows="8">H1: Thì quá khứ hoàn thành là gì?
+                    <article class="panel content-config-card form-panel">
+                      <div class="panel-head"><div><h2>03 · System prompt</h2><p>Mỗi preset đều có thể sửa trực tiếp trước khi chạy.</p></div><button class="text-btn" id="resetSystemPrompt">Khôi phục mẫu</button></div>
+                      <label>Chọn system prompt<select id="writerSystemPreset"><option value="seo">DOL SEO Writer · Standard</option><option value="academic">DOL Academic Expert</option><option value="conversion">DOL Conversion Writer</option><option value="editorial">Editorial Human-like</option><option value="custom">Custom prompt</option></select></label>
+                      <label>System prompt custom<textarea id="writerSystemPrompt" rows="8">Bạn là Senior Content Specialist của DOL English. Hãy viết chính xác, hữu ích, có chiều sâu học thuật nhưng dễ hiểu. Tuân thủ DOL Brand Voice và phương pháp Linearthinking: chia nhỏ vấn đề, giải thích logic, đưa ví dụ đối chiếu và không bịa dữ kiện. Nội dung phải nguyên bản, tự nhiên, không dùng các câu sáo rỗng của AI.</textarea></label>
+                    </article>
+
+                    <article class="panel content-config-card form-panel outline-builder-card">
+                      <div class="panel-head"><div><h2>04 · Outline</h2><p>AI tạo outline hoặc nhập outline có sẵn.</p></div><span class="agent-chip">AI / Manual</span></div>
+                      <div class="form-grid two"><label>Model tạo outline<select id="writerOutlineModel" class="ai-model-select"><option>Đang tải models...</option></select></label><label>Search intent<select id="writerOutlineIntent"><option>Informational</option><option>Commercial Investigation</option><option>Transactional</option><option>Navigation</option></select></label></div>
+                      <label>Custom prompt tạo outline<textarea id="writerOutlinePrompt" rows="3">Tạo outline H1-H2-H3 bao phủ search intent, semantic entities, information gain và FAQ. Không lặp ý.</textarea></label>
+                      <div class="inline-action-row"><span>Bạn có thể generate rồi chỉnh tay hoặc dán outline sẵn có.</span><button class="secondary-btn mini-btn" id="generateWriterOutline">✦ AI tạo outline</button></div>
+                      <label>Outline chỉnh sửa<textarea id="writerOutline" rows="10">H1: Thì quá khứ hoàn thành là gì?
 H2: Công thức thì quá khứ hoàn thành
 H2: Cách dùng và dấu hiệu nhận biết
 H2: Phân biệt với thì quá khứ đơn
 H2: Ví dụ và bài tập có đáp án
 H2: Câu hỏi thường gặp</textarea></label>
-                    <div class="form-grid two"><label>Đối tượng<input id="writerAudience" value="Người học IELTS trình độ 4.0–6.5" /></label><label>CTA<input id="writerCta" value="Làm bài tập miễn phí tại DOL" /></label></div>
-                    <label>Yêu cầu riêng<textarea id="writerInstruction" rows="3">Dùng ví dụ Anh–Việt, bảng so sánh và ít nhất 5 câu hỏi bài tập.</textarea></label>
-                  </article>
+                    </article>
 
-                  <article class="panel content-config-card">
-                    <div class="panel-head"><div><h2>On-page checklist</h2><p>AI phải tự kiểm tra trước khi trả kết quả.</p></div><span class="check-count" id="seoCheckCount">8/8 bật</span></div>
-                    <div class="seo-check-grid">
-                      <label><input type="checkbox" value="Keyword trong title và 100 từ đầu" checked /> Keyword placement</label>
-                      <label><input type="checkbox" value="Cấu trúc heading H1-H2-H3 đúng thứ bậc" checked /> Heading hierarchy</label>
-                      <label><input type="checkbox" value="Meta title tối đa 60 ký tự và meta description tối đa 155 ký tự" checked /> Meta tags</label>
-                      <label><input type="checkbox" value="Đề xuất internal link và anchor text phù hợp" checked /> Internal links</label>
-                      <label><input type="checkbox" value="Bao phủ semantic entities và từ khóa phụ tự nhiên" checked /> Semantic coverage</label>
-                      <label><input type="checkbox" value="Đoạn văn ngắn, dễ scan, có danh sách hoặc bảng khi phù hợp" checked /> Readability</label>
-                      <label><input type="checkbox" value="Có FAQ và đề xuất FAQ schema" checked /> FAQ schema</label>
-                      <label><input type="checkbox" value="Không keyword stuffing, không tạo dữ kiện hoặc nguồn giả" checked /> Quality guardrail</label>
-                    </div>
-                  </article>
+                    <article class="panel content-config-card form-panel seo-assets-card">
+                      <div class="panel-head"><div><h2>05 · Title, H1, URL & Description</h2><p>Generate tất cả hoặc từng trường bằng custom prompt.</p></div><button class="primary-btn mini-btn" id="generateAllMetadata">✦ AI generate tất cả</button></div>
+                      <label>Model tạo metadata<select id="writerMetaModel" class="ai-model-select"><option>Đang tải models...</option></select></label>
+                      <div class="ai-field"><label>Title bài viết<input id="writerTitle" value="Thì quá khứ hoàn thành: Công thức, cách dùng và bài tập" /></label><button type="button" data-generate-meta="title">✦</button></div>
+                      <details class="custom-prompt"><summary>Custom prompt cho Title</summary><textarea id="writerTitlePrompt" rows="2">Viết SEO title hấp dẫn, chứa keyword tự nhiên, tối đa 60 ký tự.</textarea></details>
+                      <div class="ai-field"><label>Heading 1<input id="writerH1" value="Thì quá khứ hoàn thành (Past Perfect) từ A–Z" /></label><button type="button" data-generate-meta="h1">✦</button></div>
+                      <details class="custom-prompt"><summary>Custom prompt cho H1</summary><textarea id="writerH1Prompt" rows="2">Tạo H1 khác title, rõ lợi ích và đúng search intent.</textarea></details>
+                      <div class="ai-field"><label>URL bài viết<input id="writerSlug" value="/thi-qua-khu-hoan-thanh" /></label><button type="button" data-generate-meta="slug">✦</button></div>
+                      <details class="custom-prompt"><summary>Custom prompt cho URL</summary><textarea id="writerSlugPrompt" rows="2">Tạo slug ngắn, không dấu, chứa keyword, dùng dấu gạch ngang.</textarea></details>
+                      <div class="ai-field"><label>Description bài viết<textarea id="writerDescription" rows="3">Nắm vững thì quá khứ hoàn thành với công thức, cách dùng, dấu hiệu nhận biết, ví dụ và bài tập có đáp án từ DOL English.</textarea></label><button type="button" data-generate-meta="description">✦</button></div>
+                      <details class="custom-prompt"><summary>Custom prompt cho Description</summary><textarea id="writerDescriptionPrompt" rows="2">Viết meta description 140–155 ký tự, chứa keyword và có lời hứa giá trị rõ ràng.</textarea></details>
+                    </article>
+
+                    <article class="panel content-config-card form-panel">
+                      <div class="panel-head"><div><h2>06 · Brief bổ sung</h2><p>Tất cả trường đều được đưa vào prompt cuối.</p></div><span class="variable-count">Optional</span></div>
+                      <div class="form-grid two"><label>Đối tượng<input id="writerAudience" value="Người học IELTS trình độ 4.0–6.5" /></label><label>CTA<input id="writerCta" value="Làm bài tập miễn phí tại DOL" /></label></div>
+                      <label>Yêu cầu riêng<textarea id="writerInstruction" rows="4">Dùng ví dụ Anh–Việt, bảng so sánh và ít nhất 5 câu hỏi bài tập.</textarea></label>
+                    </article>
+
+                    <article class="panel content-config-card">
+                      <div class="panel-head"><div><h2>07 · On-page checklist</h2><p>AI phải tự kiểm tra trước khi trả kết quả.</p></div><span class="check-count" id="seoCheckCount">8/8 bật</span></div>
+                      <div class="seo-check-grid">
+                        <label><input type="checkbox" value="Keyword trong title, H1 và 100 từ đầu" checked /> Keyword placement</label><label><input type="checkbox" value="Cấu trúc heading H1-H2-H3 đúng thứ bậc" checked /> Heading hierarchy</label><label><input type="checkbox" value="Meta title tối đa 60 ký tự và meta description tối đa 155 ký tự" checked /> Meta tags</label><label><input type="checkbox" value="Đề xuất internal link và anchor text phù hợp" checked /> Internal links</label><label><input type="checkbox" value="Bao phủ semantic entities và từ khóa phụ tự nhiên" checked /> Semantic coverage</label><label><input type="checkbox" value="Đoạn văn ngắn, dễ scan, có danh sách hoặc bảng khi phù hợp" checked /> Readability</label><label><input type="checkbox" value="Có FAQ và đề xuất FAQ schema" checked /> FAQ schema</label><label><input type="checkbox" value="Không keyword stuffing, không tạo dữ kiện hoặc nguồn giả" checked /> Quality guardrail</label>
+                      </div>
+                    </article>
+                  </div>
+
+                  <aside class="writer-output-column writer-run-column">
+                    <article class="panel writer-ready-card"><span class="writer-ready-icon">✦</span><h2>Content Agent sẵn sàng</h2><p>AI sẽ ghép keyword, metadata, outline, brand voice, system prompt và on-page rules thành một bài hoàn chỉnh.</p><div class="ready-checks"><span>✓ Tất cả field có thể custom</span><span>✓ Không ghi đè revision cũ</span><span>✓ Lưu vào Content Library</span></div></article>
+                    <article class="panel prompt-assembly"><div class="panel-head"><div><h2>Prompt assembly</h2><p>Preview request trước khi gửi OpenRouter.</p></div><button class="text-btn" id="togglePromptPreview">Xem prompt</button></div><div id="writerPromptPreview" hidden></div><div class="run-summary"><span><small>Context ước tính</small><strong id="writerTokenEstimate">~1.100 tokens</strong></span><span><small>Output mục tiêu</small><strong>HTML semantic</strong></span><span><small>API bucket</small><strong>Content</strong></span></div></article>
+                    <button class="generate-btn" id="generateContent"><span>✦</span><span><strong>Generate Content</strong><small>Chạy Writer Agent qua OpenRouter</small></span><i>→</i></button>
+                  </aside>
                 </div>
-
-                <aside class="writer-output-column">
-                  <article class="panel output-panel">
-                    <div class="panel-head output-head"><div><h2>AI writing canvas</h2><p id="writerOutputMeta">Chưa tạo content · Output HTML sạch</p></div><div class="output-actions"><select id="writerExportFormat"><option value="html">HTML</option><option value="doc">Word .doc</option><option value="txt">TXT</option></select><button class="secondary-btn mini-btn" id="copyWriterOutput">Sao chép</button><button class="primary-btn mini-btn" id="exportWriterOutput">Tải file</button></div></div>
-                    <div class="writer-placeholder" id="writerPlaceholder"><span>✦</span><h3>Sẵn sàng tạo content</h3><p>AI sẽ ghép system prompt, brand voice, brief và toàn bộ tiêu chuẩn on-page.</p><div><span>1</span> Generate <b>→</b><span>2</span> Review <b>→</b><span>3</span> Audit</div></div>
-                    <div class="rich-output writer-output" id="writerOutput" contenteditable="true" hidden></div>
-                  </article>
-                  <article class="panel prompt-assembly"><div class="panel-head"><div><h2>Prompt assembly</h2><p>Preview request trước khi gửi OpenRouter.</p></div><button class="text-btn" id="togglePromptPreview">Xem prompt</button></div><div id="writerPromptPreview" hidden></div><div class="run-summary"><span><small>Context ước tính</small><strong id="writerTokenEstimate">~1.100 tokens</strong></span><span><small>Output mục tiêu</small><strong>HTML semantic</strong></span><span><small>API bucket</small><strong>Content</strong></span></div></article>
-                  <button class="generate-btn" id="generateContent"><span>✦</span><span><strong>Generate with OpenRouter</strong><small>Tạo revision mới, không ghi đè bản trước</small></span><i>→</i></button>
-                </aside>
               </div>
+
+              <div class="writer-editor-dashboard" id="writerEditorDashboard" hidden>
+                <div class="editor-topbar panel"><button class="secondary-btn mini-btn" id="backToWriterSetup">← Setup</button><div><strong id="editorDocumentTitle">Untitled content</strong><small id="writerOutputMeta">Revision mới</small></div><span class="save-state" id="editorSaveState">● Đã lưu</span><button class="secondary-btn mini-btn" id="copyWriterOutput">Sao chép</button><select id="writerExportFormat"><option value="html">HTML</option><option value="doc">Word .doc</option><option value="txt">TXT</option><option value="md">Markdown</option><option value="json">JSON</option></select><button class="primary-btn mini-btn" id="exportWriterOutput">Export</button></div>
+                <div class="editor-workspace">
+                  <main class="panel article-editor-panel">
+                    <div class="editor-toolbar" id="editorToolbar"><select data-format-block><option value="p">Paragraph</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option></select><button data-command="bold" title="Bold"><b>B</b></button><button data-command="italic" title="Italic"><i>I</i></button><button data-command="justifyLeft" title="Align left">☰</button><button data-command="insertUnorderedList" title="Bullet list">☷</button><button data-command="createLink" title="Link">↗</button><button data-command="undo" title="Undo">↶</button><button data-command="redo" title="Redo">↷</button><span></span><button id="openReviewFromEditor">✓ Review</button><button id="openAuditFromEditor">⌁ Audit</button></div>
+                    <div class="rich-output writer-output" id="writerOutput" contenteditable="true" data-placeholder="Nội dung bài viết..."></div>
+                    <footer class="editor-footer"><span id="editorWordCount">0 words</span><span>Autosave trên trình duyệt</span></footer>
+                  </main>
+                  <aside class="panel editor-inspector">
+                    <div class="inspector-tabs"><button class="active" data-inspector-tab="seo">SEO</button><button data-inspector-tab="ai">AI</button><button data-inspector-tab="images">HÌNH ẢNH</button></div>
+                    <div class="inspector-pane active" id="inspector-seo"><div class="seo-score-head"><span>SEO Score</span><strong id="liveSeoScore">0%</strong></div><div class="seo-score-bar"><i id="liveSeoBar"></i></div><h3>SERP Preview</h3><div class="serp-card"><small id="serpUrl">grammar.dolenglish.vn/...</small><strong id="serpTitle">SEO title</strong><p id="serpDescription">Meta description sẽ hiển thị tại đây.</p></div><h3>Từ khóa</h3><div class="keyword-chip" id="seoKeywordChip">focus keyword</div><div class="live-seo-checklist" id="liveSeoChecklist"></div></div>
+                    <div class="inspector-pane" id="inspector-ai" hidden><h3>AI Writing Assistant</h3><p>Chọn đoạn văn trong editor để chạy tác vụ.</p><button data-ai-edit="rewrite">✦ Rewrite tự nhiên hơn</button><button data-ai-edit="expand">＋ Viết mở rộng</button><button data-ai-edit="shorten">− Viết ngắn gọn</button><button data-ai-edit="tone">◎ Áp dụng Brand Voice</button></div>
+                    <div class="inspector-pane" id="inspector-images" hidden><h3>Media Assistant</h3><p>Quản lý ảnh minh họa và alt text cho bài viết.</p><div class="image-dropzone">▧<strong>Thêm hình ảnh</strong><small>Upload hoặc kết nối Media Library</small></div></div>
+                  </aside>
+                </div>
+              </div>
+
+              <article class="panel writer-library-panel"><div class="panel-head"><div><h2>Content Library</h2><p>Các bài đã generate trên thiết bị này.</p></div><span class="variable-count" id="writerLibraryCount">0 bài</span></div><div class="writer-library" id="writerLibrary"><div class="library-empty">Chưa có bài viết nào. Bài mới sẽ xuất hiện tại đây sau khi generate.</div></div></article>
             </div>
 
             <div class="content-workflow" id="content-review" hidden>
