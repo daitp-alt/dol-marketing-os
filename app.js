@@ -72,13 +72,256 @@ function showToast(title, message) {
   window.toastTimer = setTimeout(() => toast.classList.remove("show"), 2800);
 }
 
-document.querySelector("#generateDemo").addEventListener("click", (event) => {
-  event.currentTarget.querySelector("strong").textContent = "Đang chuẩn bị workflow...";
-  setTimeout(() => {
-    event.currentTarget.querySelector("strong").textContent = "Generate content";
-    showToast("Đã tạo content job", "Demo không gọi API hoặc sử dụng token thật.");
-  }, 900);
+// Content Studio
+const defaultSystemPrompt = "Bạn là Senior Content Specialist của DOL English. Hãy viết chính xác, hữu ích, có chiều sâu học thuật nhưng dễ hiểu. Tuân thủ DOL Brand Voice và phương pháp Linearthinking: chia nhỏ vấn đề, giải thích logic, đưa ví dụ đối chiếu và không bịa dữ kiện. Nội dung phải nguyên bản, tự nhiên, không dùng các câu sáo rỗng của AI.";
+let contentSessionToken = "";
+
+function switchContentTab(tab) {
+  document.querySelectorAll(".content-tab").forEach((button) => button.classList.toggle("active", button.dataset.contentTab === tab));
+  document.querySelectorAll(".content-workflow").forEach((panel) => {
+    const active = panel.id === `content-${tab}`;
+    panel.hidden = !active;
+    panel.classList.toggle("active", active);
+  });
+  if ((tab === "review" || tab === "audit") && document.querySelector("#writerOutput")?.innerText.trim()) {
+    const target = document.querySelector(tab === "review" ? "#reviewInput" : "#auditInput");
+    if (target && !target.value.trim()) target.value = document.querySelector("#writerOutput").innerText.trim();
+  }
+}
+
+document.querySelectorAll(".content-tab").forEach((button) => button.addEventListener("click", () => switchContentTab(button.dataset.contentTab)));
+
+async function connectContentGateway() {
+  const input = document.querySelector("#contentAdminToken");
+  const button = document.querySelector("#contentConnect");
+  const dot = document.querySelector("#contentGatewayDot");
+  const copy = document.querySelector("#contentGatewayText");
+  contentSessionToken = input.value.trim();
+  if (!contentSessionToken) return showToast("Thiếu access token", "Nhập AI Gateway access token để kết nối.");
+  button.disabled = true;
+  button.textContent = "Đang kiểm tra...";
+  try {
+    const response = await fetch("/api/openrouter/usage", { headers: { "X-Admin-Token": contentSessionToken } });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Không thể kết nối AI Gateway.");
+    dot.classList.add("connected");
+    copy.textContent = "Đã xác thực · Content key được bảo vệ trên server.";
+    input.value = "";
+    showToast("AI Gateway đã kết nối", "Content Agent sẵn sàng sử dụng OpenRouter.");
+  } catch (error) {
+    contentSessionToken = "";
+    dot.classList.remove("connected");
+    copy.textContent = error.message;
+    showToast("Kết nối thất bại", error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Kết nối";
+  }
+}
+
+document.querySelector("#contentConnect")?.addEventListener("click", connectContentGateway);
+document.querySelector("#contentAdminToken")?.addEventListener("keydown", (event) => { if (event.key === "Enter") connectContentGateway(); });
+
+async function loadContentModels() {
+  const select = document.querySelector("#writerModel");
+  const meta = document.querySelector("#modelMeta");
+  if (!select) return;
+  try {
+    const response = await fetch("/api/openrouter/models", { headers: { Accept: "application/json" } });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Không tải được model.");
+    select.innerHTML = payload.models.map((model) => `<option value="${escapeHtml(model.id)}">${escapeHtml(model.name)} · ${escapeHtml(model.provider)}</option>`).join("");
+    const recommended = payload.models.find((model) => model.recommended);
+    if (recommended) select.value = recommended.id;
+    const updateMeta = () => {
+      const model = payload.models.find((item) => item.id === select.value);
+      if (model) meta.textContent = `${model.context.toLocaleString("vi-VN")} context · input $${model.prompt_price}/1M · output $${model.completion_price}/1M`;
+    };
+    select.addEventListener("change", updateMeta);
+    updateMeta();
+  } catch (error) {
+    select.innerHTML = '<option value="openai/gpt-4.1">openai/gpt-4.1 · fallback</option>';
+    meta.textContent = error.message;
+  }
+}
+
+function selectedSeoRules() {
+  return [...document.querySelectorAll(".seo-check-grid input:checked")].map((input) => input.value);
+}
+
+function updateSeoCheckCount() {
+  const all = document.querySelectorAll(".seo-check-grid input");
+  const checked = document.querySelectorAll(".seo-check-grid input:checked");
+  const count = document.querySelector("#seoCheckCount");
+  if (count) count.textContent = `${checked.length}/${all.length} bật`;
+}
+
+document.querySelectorAll(".seo-check-grid input").forEach((input) => input.addEventListener("change", updateSeoCheckCount));
+
+function writerPayload() {
+  return {
+    mode: "writer",
+    model: document.querySelector("#writerModel").value,
+    temperature: Number(document.querySelector("#writerTemperature").value),
+    systemPrompt: document.querySelector("#writerSystemPrompt").value,
+    project: document.querySelector("#writerProject").value,
+    contentType: document.querySelector("#writerType").value,
+    brandVoice: document.querySelector("#writerVoice").value,
+    style: document.querySelector("#writerStyle").value,
+    title: document.querySelector("#writerTitle").value,
+    keyword: document.querySelector("#writerKeyword").value,
+    outline: document.querySelector("#writerOutline").value,
+    audience: document.querySelector("#writerAudience").value,
+    cta: document.querySelector("#writerCta").value,
+    instruction: document.querySelector("#writerInstruction").value,
+    targetLength: document.querySelector("#writerLength").value,
+    seoRules: selectedSeoRules(),
+  };
+}
+
+function workflowPayload(mode) {
+  const shared = { mode, model: document.querySelector("#writerModel")?.value || "openai/gpt-4.1", temperature: 0.3 };
+  if (mode === "keywords") return { ...shared, project: document.querySelector("#keywordProject").value, market: document.querySelector("#keywordMarket").value, seed: document.querySelector("#keywordSeed").value, audience: document.querySelector("#keywordAudience").value, count: document.querySelector("#keywordCount").value, instruction: document.querySelector("#keywordInstruction").value };
+  if (mode === "outline") return { ...shared, keyword: document.querySelector("#outlineKeyword").value, entities: document.querySelector("#outlineEntities").value, intent: document.querySelector("#outlineIntent").value, depth: document.querySelector("#outlineDepth").value, angle: document.querySelector("#outlineAngle").value };
+  if (mode === "review") return { ...shared, content: document.querySelector("#reviewInput").value, dimensions: [...document.querySelectorAll(".review-dimensions input:checked")].map((input) => input.parentElement.textContent.trim()) };
+  return { ...shared, url: document.querySelector("#auditUrl").value, keyword: document.querySelector("#auditKeyword").value, content: document.querySelector("#auditInput").value, seoRules: selectedSeoRules() };
+}
+
+function stripCodeFence(content) {
+  return String(content || "").trim().replace(/^```(?:html)?\s*/i, "").replace(/\s*```$/, "");
+}
+
+function sanitizeGeneratedHtml(html) {
+  const doc = new DOMParser().parseFromString(stripCodeFence(html), "text/html");
+  doc.querySelectorAll("script,style,iframe,object,embed,link,meta,form,input,button,textarea,select").forEach((node) => node.remove());
+  doc.querySelectorAll("*").forEach((node) => {
+    [...node.attributes].forEach((attribute) => {
+      if (attribute.name.startsWith("on") || ((attribute.name === "href" || attribute.name === "src") && /^javascript:/i.test(attribute.value))) node.removeAttribute(attribute.name);
+      if (attribute.name === "style") node.removeAttribute(attribute.name);
+    });
+  });
+  return doc.body.innerHTML;
+}
+
+async function callContentAgent(payload) {
+  if (!contentSessionToken) throw new Error("Hãy kết nối AI Gateway trước khi chạy workflow.");
+  const response = await fetch("/api/content/generate", { method: "POST", headers: { "Content-Type": "application/json", "X-Admin-Token": contentSessionToken }, body: JSON.stringify(payload) });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Content Agent không thể hoàn thành yêu cầu.");
+  return data;
+}
+
+async function generateWriterContent() {
+  const button = document.querySelector("#generateContent");
+  const strong = button.querySelector("strong");
+  const small = button.querySelector("small");
+  button.classList.add("loading");
+  strong.textContent = "AI đang viết content...";
+  small.textContent = "Đang gọi model qua OpenRouter";
+  try {
+    const data = await callContentAgent(writerPayload());
+    const output = document.querySelector("#writerOutput");
+    output.innerHTML = sanitizeGeneratedHtml(data.content);
+    output.hidden = false;
+    document.querySelector("#writerPlaceholder").hidden = true;
+    document.querySelector("#writerOutputMeta").textContent = `${data.model} · ${data.usage?.total_tokens?.toLocaleString("vi-VN") || "—"} tokens · Revision mới`;
+    showToast("Đã tạo content", "Bài viết sẵn sàng để chỉnh sửa, review hoặc audit.");
+  } catch (error) {
+    showToast("Không thể generate", error.message);
+  } finally {
+    button.classList.remove("loading");
+    strong.textContent = "Generate with OpenRouter";
+    small.textContent = "Tạo revision mới, không ghi đè bản trước";
+  }
+}
+
+document.querySelector("#generateContent")?.addEventListener("click", generateWriterContent);
+
+async function runSecondaryWorkflow(mode, button) {
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = "✦ AI Agent đang xử lý...";
+  try {
+    const data = await callContentAgent(workflowPayload(mode));
+    const target = document.querySelector(`#${mode}Result`);
+    if (mode === "outline") target.innerHTML = sanitizeGeneratedHtml(data.content);
+    else {
+      target.classList.add("has-result", "workflow-report");
+      target.textContent = stripCodeFence(data.content);
+    }
+    const score = String(data.content).match(/(?:SCORE|ĐIỂM)\s*[:：]\s*(\d{1,3})/i)?.[1];
+    if (score && (mode === "review" || mode === "audit")) {
+      const badge = document.querySelector(mode === "review" ? "#reviewScore" : "#auditScore");
+      badge.textContent = score;
+      badge.className = `score ${Number(score) >= 80 ? "good" : "medium"}`;
+    }
+    showToast("Workflow hoàn tất", `${mode} đã tạo kết quả mới.`);
+  } catch (error) {
+    showToast("Workflow thất bại", error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = original;
+  }
+}
+
+document.querySelectorAll("[data-run-mode]").forEach((button) => button.addEventListener("click", () => runSecondaryWorkflow(button.dataset.runMode, button)));
+
+document.querySelector("#outlineToWriter")?.addEventListener("click", () => {
+  const outline = document.querySelector("#outlineResult").innerText.trim();
+  if (!outline) return showToast("Outline đang trống", "Hãy tạo hoặc nhập outline trước.");
+  document.querySelector("#writerOutline").value = outline;
+  switchContentTab("writer");
+  showToast("Đã chuyển outline", "Outline đã được đưa vào Content Brief.");
 });
+
+document.querySelector("#resetSystemPrompt")?.addEventListener("click", () => { document.querySelector("#writerSystemPrompt").value = defaultSystemPrompt; });
+document.querySelector("#togglePromptPreview")?.addEventListener("click", (event) => {
+  const preview = document.querySelector("#writerPromptPreview");
+  preview.hidden = !preview.hidden;
+  preview.textContent = JSON.stringify(writerPayload(), null, 2);
+  event.currentTarget.textContent = preview.hidden ? "Xem prompt" : "Ẩn prompt";
+});
+
+function downloadContent(filename, content, type) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
+function exportWriter() {
+  const output = document.querySelector("#writerOutput");
+  if (output.hidden || !output.innerText.trim()) return showToast("Chưa có content", "Generate hoặc nhập content trước khi tải file.");
+  const format = document.querySelector("#writerExportFormat").value;
+  const slug = "dol-content-" + new Date().toISOString().slice(0, 10);
+  if (format === "txt") return downloadContent(`${slug}.txt`, output.innerText, "text/plain;charset=utf-8");
+  const documentHtml = `<!doctype html><html><head><meta charset="utf-8"><title>DOL Content</title></head><body>${output.innerHTML}</body></html>`;
+  if (format === "doc") return downloadContent(`${slug}.doc`, documentHtml, "application/msword");
+  downloadContent(`${slug}.html`, documentHtml, "text/html;charset=utf-8");
+}
+
+document.querySelector("#exportWriterOutput")?.addEventListener("click", exportWriter);
+document.querySelector("#copyWriterOutput")?.addEventListener("click", async () => {
+  const output = document.querySelector("#writerOutput");
+  if (output.hidden || !output.innerText.trim()) return showToast("Chưa có content", "Không có nội dung để sao chép.");
+  await navigator.clipboard.writeText(output.innerText);
+  showToast("Đã sao chép", "Content đã được đưa vào clipboard.");
+});
+document.querySelectorAll("[data-export-target]").forEach((button) => button.addEventListener("click", () => {
+  const target = document.querySelector(`#${button.dataset.exportTarget}`);
+  if (!target?.innerText.trim() || !target.classList.contains("has-result")) return showToast("Chưa có dữ liệu", "Chạy workflow trước khi tải file.");
+  downloadContent("dol-keyword-research.txt", target.innerText, "text/plain;charset=utf-8");
+}));
+
+document.querySelectorAll("#writerSystemPrompt,#writerTitle,#writerKeyword,#writerOutline,#writerInstruction").forEach((input) => input.addEventListener("input", () => {
+  const chars = writerPayload().systemPrompt.length + writerPayload().outline.length + writerPayload().instruction.length;
+  document.querySelector("#writerTokenEstimate").textContent = `~${Math.max(300, Math.round(chars / 3.5)).toLocaleString("vi-VN")} tokens`;
+}));
+
+document.querySelector("#contentPromptLibrary")?.addEventListener("click", () => showToast("Prompt Library", "Prompt mẫu sẽ được quản trị theo project và version ở giai đoạn tiếp theo."));
+loadContentModels();
 
 document.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
