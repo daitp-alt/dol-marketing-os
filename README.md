@@ -12,6 +12,24 @@ Interactive, responsive UI concept for DOL English's internal Marketing Operatin
 - Request Center for cross-department collaboration
 - Resource Hub
 - Blueprints for Paid Ads, Social, Reports and Administration
+- OpenRouter AI Gateway with per-category monthly usage and limit monitoring
+
+## OpenRouter gateway
+
+The admin gateway reads live usage from OpenRouter without exposing keys to the browser. Configure these as Vercel environment variables:
+
+```text
+AI_GATEWAY_ADMIN_TOKEN
+OPENROUTER_MANAGEMENT_KEY
+OPENROUTER_CONTENT_KEY
+OPENROUTER_SEO_KEY
+OPENROUTER_SEEDING_KEY
+OPENROUTER_ADS_KEY
+OPENROUTER_CHATBOT_KEY
+OPENROUTER_RESEARCH_KEY
+```
+
+`OPENROUTER_MANAGEMENT_KEY` is sufficient for the usage dashboard because it can list key metadata and account credits. Category keys are used later by their respective generation workflows. API keys submitted through the validation form are never persisted by the application.
 
 ## Run locally
 
