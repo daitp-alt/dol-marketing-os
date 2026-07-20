@@ -41,7 +41,6 @@
             <div class="nav-submenu" id="contentSubmenu">
               <a class="nav-subitem" href="#content/keywords" data-content-route="keywords"><span>⌕</span> Keywords Research</a>
               <a class="nav-subitem" href="#content/outline" data-content-route="outline"><span>☷</span> Outline Content</a>
-              <a class="nav-subitem" href="#content/chatbot" data-content-route="chatbot"><span>◉</span> Content Chatbot</a>
               <a class="nav-subitem active" href="#content/writer" data-content-route="writer"><span>✎</span> Writer Content</a>
               <a class="nav-subitem" href="#content/review" data-content-route="review"><span>✓</span> Review Content</a>
               <a class="nav-subitem" href="#content/audit" data-content-route="audit"><span>⌁</span> Audit Content</a>
@@ -275,40 +274,6 @@ H2: Câu hỏi thường gặp</textarea></label>
               </div>
             </div>
 
-            <div class="content-workflow" id="content-chatbot" hidden>
-              <div class="chat-shell">
-                <aside class="panel chat-history-panel">
-                  <button class="chat-new-btn" id="newContentChat" type="button"><span>＋</span> Chat mới</button>
-                  <label class="chat-search"><span>⌕</span><input id="chatSearch" type="search" placeholder="Tìm hội thoại..." /></label>
-                  <div class="chat-history-label"><span>Hội thoại gần đây</span><small id="chatCount">0</small></div>
-                  <div class="chat-conversation-list" id="chatConversationList"></div>
-                  <div class="chat-storage-note"><span>▣</span><small>Lịch sử được lưu riêng trên trình duyệt này.</small></div>
-                </aside>
-
-                <section class="panel chat-main-panel">
-                  <header class="chat-header">
-                    <div class="chat-heading"><span class="chat-agent-avatar">✦</span><div><strong id="chatActiveTitle">Chat mới</strong><small id="chatActiveMeta">DOL Content Copilot</small></div></div>
-                    <div class="chat-header-actions"><select id="chatModel" class="ai-model-select" aria-label="Chọn model AI"><option value="openai/gpt-4.1-mini">Đang tải model...</option></select><button class="icon-btn" id="chatSettingsToggle" type="button" title="Cài đặt chatbot" aria-expanded="false">⚙</button><button class="icon-btn" id="deleteContentChat" type="button" title="Xóa hội thoại">⌫</button></div>
-                  </header>
-
-                  <div class="chat-settings" id="chatSettings" hidden>
-                    <div><strong>Cài đặt AI Agent</strong><small>Tùy chỉnh riêng cho hội thoại hiện tại.</small></div>
-                    <label>System prompt<textarea id="chatSystemPrompt" rows="5">Bạn là DOL Content Copilot, trợ lý marketing và content cấp senior của DOL English. Trả lời chính xác, thực tế, có cấu trúc, ưu tiên tiếng Việt tự nhiên và tuân thủ brand voice của DOL. Không bịa dữ kiện, nguồn hoặc số liệu. Khi thiếu ngữ cảnh quan trọng, hãy hỏi lại ngắn gọn.</textarea></label>
-                    <div class="form-grid two"><label>Temperature<input id="chatTemperature" type="number" min="0" max="2" step="0.1" value="0.5" /></label><label>Ngữ cảnh tối đa<select id="chatContextLimit"><option value="12">12 tin nhắn</option><option value="24" selected>24 tin nhắn</option><option value="40">40 tin nhắn</option></select></label></div>
-                  </div>
-
-                  <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
-
-                  <div class="chat-composer-wrap">
-                    <form class="chat-composer" id="contentChatForm">
-                      <textarea id="chatInput" rows="1" maxlength="12000" placeholder="Nhắn DOL Content Copilot..." aria-label="Tin nhắn"></textarea>
-                      <div class="chat-composer-actions"><button class="chat-stop-btn" id="stopContentChat" type="button" hidden>■ Dừng</button><span id="chatCharCount">0 / 12.000</span><button class="chat-send-btn" id="sendContentChat" type="submit" aria-label="Gửi tin nhắn">↑</button></div>
-                    </form>
-                    <small class="chat-hint">Enter để gửi · Shift + Enter để xuống dòng · AI có thể mắc lỗi, hãy kiểm tra thông tin quan trọng.</small>
-                  </div>
-                </section>
-              </div>
-            </div>
           </section>
 
           <section class="view" id="view-seo">
