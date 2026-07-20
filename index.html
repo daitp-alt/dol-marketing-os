@@ -191,7 +191,53 @@ Linearthinking methodology...</pre><div class="token-row"><span>Ước tính 4.2
           <section class="view placeholder-view" id="view-ads"><div class="placeholder-icon">↗</div><h1>Paid Ads</h1><p>Meta Ads, Google Ads, creative workflow, budget và performance.</p><div class="coming"><span>Module blueprint</span><strong>Đã sẵn sàng để phát triển</strong></div></section>
           <section class="view placeholder-view" id="view-social"><div class="placeholder-icon">◫</div><h1>Social & Campaign</h1><p>Content calendar, campaign planning, publishing và analytics.</p><div class="coming"><span>Module blueprint</span><strong>Đã sẵn sàng để phát triển</strong></div></section>
           <section class="view placeholder-view" id="view-reports"><div class="placeholder-icon">▥</div><h1>Unified Reports</h1><p>Báo cáo đa project cho Organic, Content, Community và Paid Media.</p><div class="coming"><span>Module blueprint</span><strong>Đã sẵn sàng để phát triển</strong></div></section>
-          <section class="view placeholder-view" id="view-admin"><div class="placeholder-icon">⚙</div><h1>Quản trị hệ thống</h1><p>Users, roles, project access, tool registry, integrations và audit log.</p><div class="role-preview"><span>Super Admin</span><span>Project Admin</span><span>Module Manager</span><span>Operator</span><span>Reviewer</span><span>Requester</span></div></section>
+          <section class="view" id="view-admin">
+            <div class="page-heading">
+              <div><p class="eyebrow purple-text">SYSTEM ADMINISTRATION</p><h1>AI Gateway</h1><p>Quản lý OpenRouter API, ngân sách và mức sử dụng theo từng hạng mục.</p></div>
+              <div class="heading-actions"><button class="secondary-btn" id="openRouterRefresh">↻ Đồng bộ usage</button><button class="primary-btn" id="focusKeyForm">＋ Kiểm tra API key</button></div>
+            </div>
+
+            <div class="gateway-status" id="gatewayStatus">
+              <span class="gateway-logo">OR</span>
+              <div><strong>OpenRouter Gateway</strong><p id="gatewayStatusText">Đang kiểm tra cấu hình server...</p></div>
+              <span class="connection-badge checking" id="gatewayBadge">Đang kiểm tra</span>
+            </div>
+
+            <div class="gateway-metrics">
+              <article><span>Chi phí tháng này</span><strong id="orMonthlyUsage">$0.00</strong><small id="orMonthlyNote">Chưa có dữ liệu</small></article>
+              <article><span>Tổng hạn mức tháng</span><strong id="orMonthlyLimit">$0.00</strong><small>USD · tổng các key có limit</small></article>
+              <article><span>Hạn mức còn lại</span><strong id="orRemaining">$0.00</strong><small id="orRemainingNote">Chờ kết nối</small></article>
+              <article><span>API key hoạt động</span><strong id="orActiveKeys">0</strong><small id="orKeyCountNote">6 hạng mục dự kiến</small></article>
+            </div>
+
+            <div class="gateway-layout">
+              <article class="panel api-keys-panel">
+                <div class="panel-head"><div><h2>Usage theo hạng mục</h2><p>Mỗi workflow dùng một OpenRouter key và monthly limit riêng.</p></div><span class="live-indicator"><i></i> Live from OpenRouter</span></div>
+                <div class="api-category-list" id="openRouterKeyRows">
+                  <div class="api-empty"><span>◌</span><strong>Chưa tải dữ liệu</strong><small>Đồng bộ để kiểm tra các key đã cấu hình.</small></div>
+                </div>
+              </article>
+
+              <aside class="gateway-side">
+                <article class="panel key-check-card" id="keyCheckCard">
+                  <div class="panel-head"><div><h2>Kiểm tra API key</h2><p>Key chỉ đi qua backend để gọi OpenRouter và không được lưu.</p></div><span class="secure-chip">⌾ Secure</span></div>
+                  <form id="openRouterKeyForm">
+                    <label>Admin access token<input id="orAdminToken" type="password" autocomplete="off" placeholder="Token quản trị AI Gateway" required /></label>
+                    <label>Hạng mục<select id="orCategory" required><option value="content">Content Automation</option><option value="seo">SEO Research</option><option value="seeding">Seeding</option><option value="ads">Paid Ads</option><option value="chatbot">Internal Chatbot</option><option value="research">Research & Insights</option></select></label>
+                    <label>OpenRouter API key<div class="secret-input"><input id="orApiKey" type="password" autocomplete="off" placeholder="sk-or-v1-..." required /><button type="button" id="toggleApiKey" aria-label="Hiện hoặc ẩn API key">◉</button></div></label>
+                    <button class="primary-btn wide" type="submit" id="checkKeyButton">Kiểm tra usage & limit</button>
+                  </form>
+                  <div class="key-check-result" id="keyCheckResult" hidden></div>
+                </article>
+
+                <article class="panel env-guide">
+                  <div class="panel-head"><div><h2>Cấu hình production</h2><p>Lưu key trong Vercel Environment Variables.</p></div></div>
+                  <div class="env-list"><code>AI_GATEWAY_ADMIN_TOKEN</code><code>OPENROUTER_MANAGEMENT_KEY</code><code>OPENROUTER_CONTENT_KEY</code><code>OPENROUTER_SEO_KEY</code><code>OPENROUTER_SEEDING_KEY</code><code>OPENROUTER_ADS_KEY</code><code>OPENROUTER_CHATBOT_KEY</code><code>OPENROUTER_RESEARCH_KEY</code></div>
+                  <p class="security-note"><span>!</span> Không lưu key trong trình duyệt, source code hoặc GitHub. Management key chỉ dùng đọc/quản lý key, không dùng để gọi model.</p>
+                </article>
+              </aside>
+            </div>
+          </section>
         </div>
       </main>
     </div>
