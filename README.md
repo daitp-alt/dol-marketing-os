@@ -4,6 +4,8 @@ Interactive, responsive UI concept for DOL English's internal Marketing Operatin
 
 Production base path: `https://mkt.dolenglish.us/seo`. All UI assets and browser API requests are namespaced under `/seo/*` so the existing DOL MKT Search routes remain isolated.
 
+The `cloudflare/` directory contains the isolated edge proxy for the exact `mkt.dolenglish.us/seo` and `mkt.dolenglish.us/seo/*` routes. It forwards only that namespace to Vercel; existing root and `/keyword-index/*` traffic remains on the current application.
+
 ## Included modules
 
 - Multi-project workspace and project switcher
