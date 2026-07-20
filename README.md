@@ -6,7 +6,9 @@ Interactive, responsive UI concept for DOL English's internal Marketing Operatin
 
 - Multi-project workspace and project switcher
 - Marketing overview dashboard
-- Content Studio with prompt, brand voice, model and context layers
+- Content Studio with five AI workflows: Keywords Research, Outline, Writer, Review and Audit
+- Writer canvas with editable system prompt, live OpenRouter model catalog, DOL brand voice, writing style and on-page guardrails
+- Secure Content Agent backend using `OPENROUTER_CONTENT_KEY`, plus HTML, Word-compatible DOC and TXT export
 - SEO Suite
 - Seeding Operations
 - Request Center for cross-department collaboration
@@ -31,10 +33,16 @@ OPENROUTER_RESEARCH_KEY
 
 `OPENROUTER_MANAGEMENT_KEY` is sufficient for the usage dashboard because it can list key metadata and account credits. Category keys are used later by their respective generation workflows. API keys submitted through the validation form are never persisted by the application.
 
+## Content Agent
+
+The Content Studio calls `POST /api/content/generate` for all five workflows. Requests require the `AI_GATEWAY_ADMIN_TOKEN` in the `X-Admin-Token` header, while the OpenRouter key stays server-side in `OPENROUTER_CONTENT_KEY`. The model selector is synchronized from `GET /api/v1/models` through the server-side `/api/openrouter/models` endpoint.
+
+AI-generated HTML is sanitized again in the browser before it is inserted into the editable writing canvas. Export is available as clean HTML, plain TXT, or Word-compatible `.doc`.
+
 ## Run locally
 
 This demo has no build step or dependencies. Open `index.html` directly, or serve the folder with any static HTTP server.
 
 ## Important
 
-All metrics and operational records are illustrative demo data. The UI does not connect to production DOL systems, invoke AI models, or mutate external data.
+Dashboard metrics and operational records are illustrative demo data. Content workflows invoke live AI models only after the required Vercel environment variables have been configured.
