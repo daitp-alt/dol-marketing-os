@@ -90,7 +90,7 @@ module.exports = async function handler(request, response) {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": process.env.PUBLIC_APP_URL || "https://dol-marketing-os.vercel.app",
+        "HTTP-Referer": process.env.PUBLIC_APP_URL || "https://mkt.dolenglish.us/seo",
         "X-OpenRouter-Title": "DOL Marketing OS",
       },
       body: JSON.stringify({
