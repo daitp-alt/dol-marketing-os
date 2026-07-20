@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 
 const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
-const ALLOWED_MODES = new Set(["keywords", "outline", "writer", "review", "audit"]);
+const ALLOWED_MODES = new Set(["keywords", "outline", "metadata", "writer", "review", "audit"]);
 
 function safeEqual(left, right) {
   const a = Buffer.from(String(left || ""));
@@ -29,7 +29,16 @@ function buildPrompt(body) {
   if (mode === "outline") {
     return {
       system: "Bạn là Content Strategist của DOL English, giỏi xây outline SEO theo search intent và information gain. Chỉ xuất HTML semantic sạch, không dùng Markdown, không thêm CSS, script hoặc toàn bộ thẻ html/body.",
-      user: `Tạo outline cho keyword: ${clean(body.keyword)}\nKeywords phụ/entities: ${clean(body.entities)}\nSearch intent: ${clean(body.intent)}\nĐộ sâu: ${clean(body.depth)}\nĐịnh hướng: ${clean(body.angle)}\n\nDùng <h1>, <h2>, <h3>, <ul>, <li>. Với mỗi heading, thêm một dòng mô tả mục tiêu nội dung và entities cần bao phủ. Cuối outline có FAQ và gợi ý CTA.`
+      user: `Tạo outline cho keyword: ${clean(body.keyword)}\nKeywords phụ/entities: ${clean(body.entities)}\nSearch intent: ${clean(body.intent)}\nĐộ sâu: ${clean(body.depth)}\nĐịnh hướng: ${clean(body.angle)}\nCustom prompt của user: ${clean(body.customPrompt, 6000)}\n\nDùng <h1>, <h2>, <h3>, <ul>, <li>. Với mỗi heading, thêm một dòng mô tả mục tiêu nội dung và entities cần bao phủ. Cuối outline có FAQ và gợi ý CTA.`
+    };
+  }
+
+  if (mode === "metadata") {
+    const fields = list(body.fields, 4);
+    if (!clean(body.keyword)) throw new Error("Keyword chính đang trống.");
+    return {
+      system: "Bạn là SEO Editor của DOL English. Chỉ trả về một JSON object hợp lệ, không Markdown, không code fence và không giải thích thêm.",
+      user: `Tạo các trường SEO sau: ${fields.join(", ") || "title, h1, slug, description"}.\nKeyword: ${clean(body.keyword)}\nProject: ${clean(body.project)}\nSearch intent: ${clean(body.intent)}\nBrand voice: ${clean(body.brandVoice)}\n\nCUSTOM PROMPTS\n- title: ${clean(body.prompts?.title, 3000)}\n- h1: ${clean(body.prompts?.h1, 3000)}\n- slug: ${clean(body.prompts?.slug, 3000)}\n- description: ${clean(body.prompts?.description, 3000)}\n\nJSON phải dùng đúng các key được yêu cầu trong số title, h1, slug, description. Slug bắt đầu bằng /, viết thường, không dấu. Không tự tạo field khác.`
     };
   }
 
@@ -54,7 +63,7 @@ function buildPrompt(body) {
   const rules = list(body.seoRules).map((rule, index) => `${index + 1}. ${rule}`).join("\n");
   return {
     system: clean(body.systemPrompt, 10000) || "Bạn là Senior Content Specialist của DOL English.",
-    user: `Hãy viết một ${clean(body.contentType)} hoàn chỉnh cho ${clean(body.project)}.\n\nBRIEF\n- Tiêu đề: ${clean(body.title)}\n- Keyword chính: ${clean(body.keyword)}\n- Đối tượng: ${clean(body.audience)}\n- Brand voice: ${clean(body.brandVoice)}\n- Phong cách: ${clean(body.style)}\n- Độ dài mục tiêu: ${clean(body.targetLength)}\n- CTA: ${clean(body.cta)}\n- Yêu cầu riêng: ${clean(body.instruction)}\n\nOUTLINE\n${clean(body.outline, 20000)}\n\nON-PAGE RULES\n${rules}\n\nOUTPUT CONTRACT\n- Chỉ xuất phần nội dung HTML semantic sạch; không Markdown, không code fence, không CSS, không script, không thẻ html/head/body.\n- Mở đầu bằng một comment HTML chứa meta title và meta description, sau đó dùng h1, h2, h3, p, ul/ol, table khi phù hợp.\n- Tự kiểm tra toàn bộ on-page rules trước khi trả lời. Không nói về quá trình tự kiểm tra trong bài viết.`
+    user: `Hãy viết một ${clean(body.contentType)} hoàn chỉnh cho ${clean(body.project)}.\n\nBRIEF\n- SEO Title: ${clean(body.title)}\n- H1: ${clean(body.h1)}\n- URL: ${clean(body.slug)}\n- Meta description: ${clean(body.description)}\n- Keyword chính: ${clean(body.keyword)}\n- Đối tượng: ${clean(body.audience)}\n- Brand voice custom: ${clean(body.brandVoice)}\n- Phong cách custom: ${clean(body.style)}\n- Wordcount mục tiêu: ${clean(body.targetLength)} từ\n- CTA: ${clean(body.cta)}\n- Yêu cầu riêng: ${clean(body.instruction)}\n\nOUTLINE\n${clean(body.outline, 20000)}\n\nON-PAGE RULES\n${rules}\n\nOUTPUT CONTRACT\n- Chỉ xuất phần nội dung HTML semantic sạch; không Markdown, không code fence, không CSS, không script, không thẻ html/head/body.\n- Bắt đầu trực tiếp bằng H1 đã duyệt, sau đó dùng h2, h3, p, ul/ol, table khi phù hợp.\n- Bám sát wordcount mục tiêu với sai số tối đa 10%.\n- Tự kiểm tra toàn bộ on-page rules trước khi trả lời. Không nói về quá trình tự kiểm tra trong bài viết.`
   };
 }
 
@@ -97,7 +106,8 @@ module.exports = async function handler(request, response) {
         model,
         messages: [{ role: "system", content: prompt.system }, { role: "user", content: prompt.user }],
         temperature,
-        max_completion_tokens: body.mode === "writer" ? 12000 : 5000,
+        max_completion_tokens: body.mode === "writer" ? 12000 : body.mode === "metadata" ? 2000 : 5000,
+        ...(body.mode === "metadata" ? { response_format: { type: "json_object" } } : {}),
       }),
       signal: AbortSignal.timeout(55000),
     });
