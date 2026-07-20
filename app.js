@@ -153,25 +153,58 @@ async function connectContentGateway() {
 document.querySelector("#contentConnect")?.addEventListener("click", connectContentGateway);
 document.querySelector("#contentAdminToken")?.addEventListener("keydown", (event) => { if (event.key === "Enter") connectContentGateway(); });
 
+const systemPromptPresets = {
+  seo: defaultSystemPrompt,
+  academic: "Bạn là chuyên gia học thuật của DOL English. Viết chính xác, kiểm soát thuật ngữ, giải thích logic bằng Linearthinking, dùng ví dụ Anh–Việt và tuyệt đối không bịa nguồn hoặc dữ kiện.",
+  conversion: "Bạn là Conversion Content Writer của DOL English. Viết thuyết phục nhưng trung thực, tập trung pain point, outcome và CTA rõ ràng; giữ giọng điệu thông minh, gần gũi và không phóng đại.",
+  editorial: "Bạn là biên tập viên cấp cao của DOL English. Viết tự nhiên như con người, đa dạng nhịp câu, loại bỏ sáo ngữ AI, ưu tiên information gain, tính rõ ràng và trải nghiệm đọc.",
+};
+const voicePresets = {
+  academic: "Chuyên sâu nhưng dễ hiểu; thông minh, chân thành; giải thích logic thay vì áp đặt; giữ chất học thuật của DOL.",
+  friendly: "Thân thiện, trẻ trung, đồng cảm với người học; dùng ngôn ngữ đời thường nhưng vẫn chính xác.",
+  performance: "Trực diện, cô đọng và định hướng hành động; nêu rõ lợi ích, bằng chứng và CTA nhưng không phóng đại.",
+};
+const stylePresets = {
+  systematic: "Giải thích có hệ thống bằng Linearthinking, dùng ví dụ đối chiếu và câu văn tự nhiên.",
+  storytelling: "Mở bằng tình huống thực tế, dẫn dắt bằng câu chuyện và rút ra bài học có thể áp dụng.",
+  expert: "Tư vấn như chuyên gia, phân tích trade-off, đưa khuyến nghị cụ thể và có điều kiện áp dụng.",
+  conversational: "Đối thoại gần gũi, câu ngắn vừa phải, đặt câu hỏi đúng lúc và tránh giọng quảng cáo.",
+  conversion: "Cấu trúc theo pain point → insight → solution → proof → CTA, rõ ràng và thuyết phục.",
+};
+const CONTENT_LIBRARY_KEY = "dol_writer_library_v2";
+let contentModels = [];
+let activeArticleId = null;
+let writerAutosaveTimer = null;
+
+function groupedModelOptions(models) {
+  const groups = new Map();
+  models.forEach((model) => {
+    if (!groups.has(model.group)) groups.set(model.group, []);
+    groups.get(model.group).push(model);
+  });
+  return [...groups.entries()].map(([label, items]) => `<optgroup label="${escapeHtml(label)}">${items.map((model) => `<option value="${escapeHtml(model.id)}">${model.recommended ? "★ " : ""}${escapeHtml(model.name)} · $${escapeHtml(model.prompt_price)}/$${escapeHtml(model.completion_price)}</option>`).join("")}</optgroup>`).join("");
+}
+
 async function loadContentModels() {
-  const select = document.querySelector("#writerModel");
+  const selects = [...document.querySelectorAll(".ai-model-select")];
   const meta = document.querySelector("#modelMeta");
-  if (!select) return;
+  if (!selects.length) return;
   try {
     const response = await fetch(`${BASE_PATH}/api/openrouter/models`, { headers: { Accept: "application/json" } });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || "Không tải được model.");
-    select.innerHTML = payload.models.map((model) => `<option value="${escapeHtml(model.id)}">${escapeHtml(model.name)} · ${escapeHtml(model.provider)}</option>`).join("");
-    const recommended = payload.models.find((model) => model.recommended);
-    if (recommended) select.value = recommended.id;
+    contentModels = payload.models || [];
+    const options = groupedModelOptions(contentModels);
+    const recommended = contentModels.find((model) => model.recommended) || contentModels[0];
+    selects.forEach((select) => { select.innerHTML = options; if (recommended) select.value = recommended.id; });
     const updateMeta = () => {
-      const model = payload.models.find((item) => item.id === select.value);
-      if (model) meta.textContent = `${model.context.toLocaleString("vi-VN")} context · input $${model.prompt_price}/1M · output $${model.completion_price}/1M`;
+      const model = contentModels.find((item) => item.id === document.querySelector("#writerModel").value);
+      if (model) meta.textContent = `${model.context.toLocaleString("vi-VN")} context · input $${model.prompt_price}/1M · output $${model.completion_price}/1M${model.economy ? " · Tiết kiệm" : ""}`;
     };
-    select.addEventListener("change", updateMeta);
+    document.querySelector("#writerModel").addEventListener("change", updateMeta);
     updateMeta();
   } catch (error) {
-    select.innerHTML = '<option value="openai/gpt-4.1">openai/gpt-4.1 · fallback</option>';
+    selects.forEach((select) => { select.innerHTML = '<option value="openai/gpt-4.1-mini">OpenAI GPT-4.1 Mini · fallback</option>'; });
     meta.textContent = error.message;
   }
 }
@@ -200,6 +233,9 @@ function writerPayload() {
     brandVoice: document.querySelector("#writerVoice").value,
     style: document.querySelector("#writerStyle").value,
     title: document.querySelector("#writerTitle").value,
+    h1: document.querySelector("#writerH1").value,
+    slug: document.querySelector("#writerSlug").value,
+    description: document.querySelector("#writerDescription").value,
     keyword: document.querySelector("#writerKeyword").value,
     outline: document.querySelector("#writerOutline").value,
     audience: document.querySelector("#writerAudience").value,
@@ -211,15 +247,15 @@ function writerPayload() {
 }
 
 function workflowPayload(mode) {
-  const shared = { mode, model: document.querySelector("#writerModel")?.value || "openai/gpt-4.1", temperature: 0.3 };
+  const shared = { mode, model: document.querySelector("#writerModel")?.value || "openai/gpt-4.1-mini", temperature: 0.3 };
   if (mode === "keywords") return { ...shared, project: document.querySelector("#keywordProject").value, market: document.querySelector("#keywordMarket").value, seed: document.querySelector("#keywordSeed").value, audience: document.querySelector("#keywordAudience").value, count: document.querySelector("#keywordCount").value, instruction: document.querySelector("#keywordInstruction").value };
-  if (mode === "outline") return { ...shared, keyword: document.querySelector("#outlineKeyword").value, entities: document.querySelector("#outlineEntities").value, intent: document.querySelector("#outlineIntent").value, depth: document.querySelector("#outlineDepth").value, angle: document.querySelector("#outlineAngle").value };
+  if (mode === "outline") return { ...shared, keyword: document.querySelector("#outlineKeyword").value, entities: document.querySelector("#outlineEntities").value, intent: document.querySelector("#outlineIntent").value, depth: document.querySelector("#outlineDepth").value, angle: document.querySelector("#outlineAngle").value, customPrompt: "" };
   if (mode === "review") return { ...shared, content: document.querySelector("#reviewInput").value, dimensions: [...document.querySelectorAll(".review-dimensions input:checked")].map((input) => input.parentElement.textContent.trim()) };
   return { ...shared, url: document.querySelector("#auditUrl").value, keyword: document.querySelector("#auditKeyword").value, content: document.querySelector("#auditInput").value, seoRules: selectedSeoRules() };
 }
 
 function stripCodeFence(content) {
-  return String(content || "").trim().replace(/^```(?:html)?\s*/i, "").replace(/\s*```$/, "");
+  return String(content || "").trim().replace(/^```(?:html|json|markdown|md)?\s*/i, "").replace(/\s*```$/, "");
 }
 
 function sanitizeGeneratedHtml(html) {
@@ -242,6 +278,101 @@ async function callContentAgent(payload) {
   return data;
 }
 
+function metadataPayload(fields) {
+  return {
+    mode: "metadata",
+    model: document.querySelector("#writerMetaModel").value,
+    temperature: 0.4,
+    fields,
+    keyword: document.querySelector("#writerKeyword").value,
+    project: document.querySelector("#writerProject").value,
+    intent: document.querySelector("#writerOutlineIntent").value,
+    brandVoice: document.querySelector("#writerVoice").value,
+    prompts: { title: document.querySelector("#writerTitlePrompt").value, h1: document.querySelector("#writerH1Prompt").value, slug: document.querySelector("#writerSlugPrompt").value, description: document.querySelector("#writerDescriptionPrompt").value },
+  };
+}
+
+async function generateMetadata(fields, button) {
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = "Đang tạo...";
+  try {
+    const data = await callContentAgent(metadataPayload(fields));
+    const result = JSON.parse(stripCodeFence(data.content));
+    const targets = { title: "#writerTitle", h1: "#writerH1", slug: "#writerSlug", description: "#writerDescription" };
+    fields.forEach((field) => { if (result[field]) document.querySelector(targets[field]).value = result[field]; });
+    updateSeoDashboard();
+    showToast("Đã tạo SEO metadata", `${fields.length} trường đã được cập nhật và vẫn có thể chỉnh tay.`);
+  } catch (error) {
+    showToast("Không thể tạo metadata", error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = original;
+  }
+}
+
+document.querySelector("#generateAllMetadata")?.addEventListener("click", (event) => generateMetadata(["title", "h1", "slug", "description"], event.currentTarget));
+document.querySelectorAll("[data-generate-meta]").forEach((button) => button.addEventListener("click", () => generateMetadata([button.dataset.generateMeta], button)));
+
+document.querySelector("#generateWriterOutline")?.addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = "✦ Đang tạo outline...";
+  try {
+    const data = await callContentAgent({ mode: "outline", model: document.querySelector("#writerOutlineModel").value, temperature: 0.3, keyword: document.querySelector("#writerKeyword").value, entities: "", intent: document.querySelector("#writerOutlineIntent").value, depth: "H1 + H2 + H3 + FAQ", angle: document.querySelector("#writerInstruction").value, customPrompt: document.querySelector("#writerOutlinePrompt").value });
+    const doc = new DOMParser().parseFromString(sanitizeGeneratedHtml(data.content), "text/html");
+    document.querySelector("#writerOutline").value = doc.body.innerText.trim();
+    showToast("Đã tạo outline", "Bạn có thể chỉnh trực tiếp trước khi generate bài.");
+  } catch (error) { showToast("Không thể tạo outline", error.message); }
+  finally { button.disabled = false; button.textContent = original; }
+});
+
+function readLibrary() {
+  try { return JSON.parse(localStorage.getItem(CONTENT_LIBRARY_KEY) || "[]"); } catch { return []; }
+}
+
+function writeLibrary(items) {
+  try { localStorage.setItem(CONTENT_LIBRARY_KEY, JSON.stringify(items.slice(0, 25))); } catch { showToast("Không thể lưu local", "Dung lượng trình duyệt đã đầy."); }
+}
+
+function currentArticle(model = "") {
+  const output = document.querySelector("#writerOutput");
+  return { id: activeArticleId || `content-${Date.now()}`, title: document.querySelector("#writerTitle").value || "Untitled content", h1: document.querySelector("#writerH1").value, slug: document.querySelector("#writerSlug").value, description: document.querySelector("#writerDescription").value, keyword: document.querySelector("#writerKeyword").value, project: document.querySelector("#writerProject").value, model: model || document.querySelector("#writerModel").value, wordcount: output.innerText.trim().split(/\s+/).filter(Boolean).length, html: output.innerHTML, updatedAt: new Date().toISOString() };
+}
+
+function saveCurrentArticle(model = "") {
+  if (!document.querySelector("#writerOutput").innerText.trim()) return;
+  const article = currentArticle(model);
+  activeArticleId = article.id;
+  const items = readLibrary().filter((item) => item.id !== article.id);
+  writeLibrary([article, ...items]);
+  renderWriterLibrary();
+  document.querySelector("#editorSaveState").textContent = "● Đã lưu";
+}
+
+function renderWriterLibrary() {
+  const items = readLibrary();
+  const container = document.querySelector("#writerLibrary");
+  document.querySelector("#writerLibraryCount").textContent = `${items.length} bài`;
+  if (!items.length) { container.innerHTML = '<div class="library-empty">Chưa có bài viết nào. Bài mới sẽ xuất hiện tại đây sau khi generate.</div>'; return; }
+  container.innerHTML = items.map((item) => `<div class="library-row" data-article-id="${escapeHtml(item.id)}"><div class="library-main"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.keyword)} · ${escapeHtml(item.project)}</small></div><div class="library-model"><strong>${escapeHtml(item.model)}</strong><small>${Number(item.wordcount || 0).toLocaleString("vi-VN")} từ</small></div><time>${new Date(item.updatedAt).toLocaleString("vi-VN")}</time><div class="library-actions"><button data-library-open>Mở editor</button><select data-library-format><option value="html">HTML</option><option value="doc">DOC</option><option value="txt">TXT</option><option value="md">Markdown</option><option value="json">JSON</option></select><button data-library-export>Export</button></div></div>`).join("");
+}
+
+function showWriterEditor() {
+  document.querySelector("#writerSetupWorkspace").hidden = true;
+  document.querySelector("#writerEditorDashboard").hidden = false;
+  document.querySelector("#editorDocumentTitle").textContent = document.querySelector("#writerTitle").value || "Untitled content";
+  updateSeoDashboard();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function showWriterSetup() {
+  document.querySelector("#writerEditorDashboard").hidden = true;
+  document.querySelector("#writerSetupWorkspace").hidden = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 async function generateWriterContent() {
   const button = document.querySelector("#generateContent");
   const strong = button.querySelector("strong");
@@ -251,19 +382,14 @@ async function generateWriterContent() {
   small.textContent = "Đang gọi model qua OpenRouter";
   try {
     const data = await callContentAgent(writerPayload());
-    const output = document.querySelector("#writerOutput");
-    output.innerHTML = sanitizeGeneratedHtml(data.content);
-    output.hidden = false;
-    document.querySelector("#writerPlaceholder").hidden = true;
-    document.querySelector("#writerOutputMeta").textContent = `${data.model} · ${data.usage?.total_tokens?.toLocaleString("vi-VN") || "—"} tokens · Revision mới`;
-    showToast("Đã tạo content", "Bài viết sẵn sàng để chỉnh sửa, review hoặc audit.");
-  } catch (error) {
-    showToast("Không thể generate", error.message);
-  } finally {
-    button.classList.remove("loading");
-    strong.textContent = "Generate with OpenRouter";
-    small.textContent = "Tạo revision mới, không ghi đè bản trước";
-  }
+    activeArticleId = `content-${Date.now()}`;
+    document.querySelector("#writerOutput").innerHTML = sanitizeGeneratedHtml(data.content);
+    document.querySelector("#writerOutputMeta").textContent = `${data.model} · ${data.usage?.total_tokens?.toLocaleString("vi-VN") || "—"} tokens`;
+    saveCurrentArticle(data.model);
+    showWriterEditor();
+    showToast("Đã tạo content", "Bài viết đã lưu vào Content Library và sẵn sàng chỉnh sửa.");
+  } catch (error) { showToast("Không thể generate", error.message); }
+  finally { button.classList.remove("loading"); strong.textContent = "Generate Content"; small.textContent = "Chạy Writer Agent qua OpenRouter"; }
 }
 
 document.querySelector("#generateContent")?.addEventListener("click", generateWriterContent);
@@ -276,10 +402,7 @@ async function runSecondaryWorkflow(mode, button) {
     const data = await callContentAgent(workflowPayload(mode));
     const target = document.querySelector(`#${mode}Result`);
     if (mode === "outline") target.innerHTML = sanitizeGeneratedHtml(data.content);
-    else {
-      target.classList.add("has-result", "workflow-report");
-      target.textContent = stripCodeFence(data.content);
-    }
+    else { target.classList.add("has-result", "workflow-report"); target.textContent = stripCodeFence(data.content); }
     const score = String(data.content).match(/(?:SCORE|ĐIỂM)\s*[:：]\s*(\d{1,3})/i)?.[1];
     if (score && (mode === "review" || mode === "audit")) {
       const badge = document.querySelector(mode === "review" ? "#reviewScore" : "#auditScore");
@@ -287,25 +410,23 @@ async function runSecondaryWorkflow(mode, button) {
       badge.className = `score ${Number(score) >= 80 ? "good" : "medium"}`;
     }
     showToast("Workflow hoàn tất", `${mode} đã tạo kết quả mới.`);
-  } catch (error) {
-    showToast("Workflow thất bại", error.message);
-  } finally {
-    button.disabled = false;
-    button.textContent = original;
-  }
+  } catch (error) { showToast("Workflow thất bại", error.message); }
+  finally { button.disabled = false; button.textContent = original; }
 }
 
 document.querySelectorAll("[data-run-mode]").forEach((button) => button.addEventListener("click", () => runSecondaryWorkflow(button.dataset.runMode, button)));
-
 document.querySelector("#outlineToWriter")?.addEventListener("click", () => {
   const outline = document.querySelector("#outlineResult").innerText.trim();
   if (!outline) return showToast("Outline đang trống", "Hãy tạo hoặc nhập outline trước.");
   document.querySelector("#writerOutline").value = outline;
   navigateContent("writer");
-  showToast("Đã chuyển outline", "Outline đã được đưa vào Content Brief.");
+  showToast("Đã chuyển outline", "Outline đã được đưa vào Writer setup.");
 });
 
-document.querySelector("#resetSystemPrompt")?.addEventListener("click", () => { document.querySelector("#writerSystemPrompt").value = defaultSystemPrompt; });
+document.querySelector("#writerSystemPreset")?.addEventListener("change", (event) => { if (systemPromptPresets[event.target.value]) document.querySelector("#writerSystemPrompt").value = systemPromptPresets[event.target.value]; });
+document.querySelector("#writerVoicePreset")?.addEventListener("change", (event) => { if (voicePresets[event.target.value]) document.querySelector("#writerVoice").value = voicePresets[event.target.value]; });
+document.querySelector("#writerStylePreset")?.addEventListener("change", (event) => { if (stylePresets[event.target.value]) document.querySelector("#writerStyle").value = stylePresets[event.target.value]; });
+document.querySelector("#resetSystemPrompt")?.addEventListener("click", () => { document.querySelector("#writerSystemPreset").value = "seo"; document.querySelector("#writerSystemPrompt").value = defaultSystemPrompt; });
 document.querySelector("#togglePromptPreview")?.addEventListener("click", (event) => {
   const preview = document.querySelector("#writerPromptPreview");
   preview.hidden = !preview.hidden;
@@ -322,21 +443,32 @@ function downloadContent(filename, content, type) {
   setTimeout(() => URL.revokeObjectURL(url), 500);
 }
 
+function articleDocument(article) {
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(article.title)}</title><meta name="description" content="${escapeHtml(article.description)}"></head><body>${article.html}</body></html>`;
+}
+
+function articleText(article) {
+  return new DOMParser().parseFromString(article.html, "text/html").body.innerText;
+}
+
+function exportArticle(article, format) {
+  const filename = (article.slug || "/dol-content").replace(/^\//, "") || "dol-content";
+  if (format === "txt") return downloadContent(`${filename}.txt`, articleText(article), "text/plain;charset=utf-8");
+  if (format === "md") return downloadContent(`${filename}.md`, `# ${article.h1 || article.title}\n\n${articleText(article)}`, "text/markdown;charset=utf-8");
+  if (format === "json") return downloadContent(`${filename}.json`, JSON.stringify(article, null, 2), "application/json;charset=utf-8");
+  if (format === "doc") return downloadContent(`${filename}.doc`, articleDocument(article), "application/msword");
+  downloadContent(`${filename}.html`, articleDocument(article), "text/html;charset=utf-8");
+}
+
 function exportWriter() {
-  const output = document.querySelector("#writerOutput");
-  if (output.hidden || !output.innerText.trim()) return showToast("Chưa có content", "Generate hoặc nhập content trước khi tải file.");
-  const format = document.querySelector("#writerExportFormat").value;
-  const slug = "dol-content-" + new Date().toISOString().slice(0, 10);
-  if (format === "txt") return downloadContent(`${slug}.txt`, output.innerText, "text/plain;charset=utf-8");
-  const documentHtml = `<!doctype html><html><head><meta charset="utf-8"><title>DOL Content</title></head><body>${output.innerHTML}</body></html>`;
-  if (format === "doc") return downloadContent(`${slug}.doc`, documentHtml, "application/msword");
-  downloadContent(`${slug}.html`, documentHtml, "text/html;charset=utf-8");
+  if (!document.querySelector("#writerOutput").innerText.trim()) return showToast("Chưa có content", "Generate hoặc nhập content trước khi export.");
+  exportArticle(currentArticle(), document.querySelector("#writerExportFormat").value);
 }
 
 document.querySelector("#exportWriterOutput")?.addEventListener("click", exportWriter);
 document.querySelector("#copyWriterOutput")?.addEventListener("click", async () => {
   const output = document.querySelector("#writerOutput");
-  if (output.hidden || !output.innerText.trim()) return showToast("Chưa có content", "Không có nội dung để sao chép.");
+  if (!output.innerText.trim()) return showToast("Chưa có content", "Không có nội dung để sao chép.");
   await navigator.clipboard.writeText(output.innerText);
   showToast("Đã sao chép", "Content đã được đưa vào clipboard.");
 });
@@ -346,12 +478,92 @@ document.querySelectorAll("[data-export-target]").forEach((button) => button.add
   downloadContent("dol-keyword-research.txt", target.innerText, "text/plain;charset=utf-8");
 }));
 
-document.querySelectorAll("#writerSystemPrompt,#writerTitle,#writerKeyword,#writerOutline,#writerInstruction").forEach((input) => input.addEventListener("input", () => {
-  const chars = writerPayload().systemPrompt.length + writerPayload().outline.length + writerPayload().instruction.length;
+function slugify(value) { return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/đ/g, "d").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+
+function updateSeoDashboard() {
+  const output = document.querySelector("#writerOutput");
+  if (!output) return;
+  const text = output.innerText.trim();
+  const keyword = document.querySelector("#writerKeyword").value.trim().toLowerCase();
+  const title = document.querySelector("#writerTitle").value.trim();
+  const h1 = document.querySelector("#writerH1").value.trim();
+  const slug = document.querySelector("#writerSlug").value.trim();
+  const description = document.querySelector("#writerDescription").value.trim();
+  const words = text ? text.split(/\s+/).filter(Boolean) : [];
+  const target = Number(document.querySelector("#writerLength").value || 0);
+  const checks = [
+    [title.toLowerCase().includes(keyword), "Keyword có trong SEO Title"],
+    [h1.toLowerCase().includes(keyword), "Keyword có trong Heading 1"],
+    [description.toLowerCase().includes(keyword), "Keyword có trong Description"],
+    [slugify(slug).includes(slugify(keyword)), "Keyword có trong URL"],
+    [words.slice(0, 100).join(" ").toLowerCase().includes(keyword), "Keyword xuất hiện trong 100 từ đầu"],
+    [output.querySelectorAll("h2").length >= 2, "Có cấu trúc H2 rõ ràng"],
+    [description.length >= 120 && description.length <= 160, `Description ${description.length}/160 ký tự`],
+    [!target || words.length >= target * .8, `Wordcount ${words.length.toLocaleString("vi-VN")}/${target.toLocaleString("vi-VN")}`],
+  ];
+  const passed = checks.filter(([ok]) => ok).length;
+  const score = Math.round((passed / checks.length) * 100);
+  document.querySelector("#liveSeoScore").textContent = `${score}%`;
+  document.querySelector("#liveSeoBar").style.width = `${score}%`;
+  document.querySelector("#serpTitle").textContent = title || "SEO title";
+  document.querySelector("#serpDescription").textContent = description || "Meta description sẽ hiển thị tại đây.";
+  document.querySelector("#serpUrl").textContent = `${document.querySelector("#writerProject").value}${slug || "/..."}`;
+  document.querySelector("#seoKeywordChip").textContent = keyword || "focus keyword";
+  document.querySelector("#editorWordCount").textContent = `${words.length.toLocaleString("vi-VN")} words`;
+  document.querySelector("#liveSeoChecklist").innerHTML = checks.map(([ok, label]) => `<div class="seo-live-item ${ok ? "pass" : "fail"}"><i>${ok ? "✓" : "!"}</i><span>${escapeHtml(label)}</span></div>`).join("");
+}
+
+document.querySelector("#backToWriterSetup")?.addEventListener("click", showWriterSetup);
+document.querySelector("#openReviewFromEditor")?.addEventListener("click", () => navigateContent("review"));
+document.querySelector("#openAuditFromEditor")?.addEventListener("click", () => navigateContent("audit"));
+document.querySelector("#writerOutput")?.addEventListener("input", () => {
+  document.querySelector("#editorSaveState").textContent = "● Đang lưu...";
+  updateSeoDashboard();
+  clearTimeout(writerAutosaveTimer);
+  writerAutosaveTimer = setTimeout(() => saveCurrentArticle(), 700);
+});
+document.querySelectorAll("#writerTitle,#writerH1,#writerSlug,#writerDescription,#writerKeyword,#writerLength").forEach((input) => input.addEventListener("input", updateSeoDashboard));
+
+document.querySelector("#editorToolbar")?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-command]");
+  if (!button) return;
+  const command = button.dataset.command;
+  const value = command === "createLink" ? window.prompt("Nhập URL liên kết:", "https://") : null;
+  if (command === "createLink" && !value) return;
+  document.execCommand(command, false, value);
+  document.querySelector("#writerOutput").focus();
+});
+document.querySelector("[data-format-block]")?.addEventListener("change", (event) => { document.execCommand("formatBlock", false, event.target.value); document.querySelector("#writerOutput").focus(); });
+
+document.querySelectorAll("[data-inspector-tab]").forEach((button) => button.addEventListener("click", () => {
+  document.querySelectorAll("[data-inspector-tab]").forEach((item) => item.classList.toggle("active", item === button));
+  document.querySelectorAll(".inspector-pane").forEach((pane) => { const active = pane.id === `inspector-${button.dataset.inspectorTab}`; pane.hidden = !active; pane.classList.toggle("active", active); });
+}));
+document.querySelectorAll("[data-ai-edit]").forEach((button) => button.addEventListener("click", () => showToast("AI editing", "Tính năng xử lý đoạn đang chọn sẽ dùng cùng Writer model ở revision tiếp theo.")));
+
+document.querySelector("#writerLibrary")?.addEventListener("click", (event) => {
+  const row = event.target.closest("[data-article-id]");
+  if (!row) return;
+  const article = readLibrary().find((item) => item.id === row.dataset.articleId);
+  if (!article) return;
+  if (event.target.closest("[data-library-open]")) {
+    activeArticleId = article.id;
+    document.querySelector("#writerOutput").innerHTML = sanitizeGeneratedHtml(article.html);
+    [["#writerTitle", article.title], ["#writerH1", article.h1], ["#writerSlug", article.slug], ["#writerDescription", article.description], ["#writerKeyword", article.keyword]].forEach(([selector, value]) => { document.querySelector(selector).value = value || ""; });
+    document.querySelector("#writerOutputMeta").textContent = `${article.model} · cập nhật ${new Date(article.updatedAt).toLocaleString("vi-VN")}`;
+    showWriterEditor();
+  }
+  if (event.target.closest("[data-library-export]")) exportArticle(article, row.querySelector("[data-library-format]").value);
+});
+
+document.querySelectorAll("#writerSystemPrompt,#writerTitle,#writerKeyword,#writerOutline,#writerInstruction,#writerVoice,#writerStyle").forEach((input) => input.addEventListener("input", () => {
+  const payload = writerPayload();
+  const chars = payload.systemPrompt.length + payload.outline.length + payload.instruction.length + payload.brandVoice.length + payload.style.length;
   document.querySelector("#writerTokenEstimate").textContent = `~${Math.max(300, Math.round(chars / 3.5)).toLocaleString("vi-VN")} tokens`;
 }));
 
-document.querySelector("#contentPromptLibrary")?.addEventListener("click", () => showToast("Prompt Library", "Prompt mẫu sẽ được quản trị theo project và version ở giai đoạn tiếp theo."));
+document.querySelector("#contentPromptLibrary")?.addEventListener("click", () => showToast("Prompt Library", "Prompt preset có thể chọn và custom trực tiếp trong Writer setup."));
+renderWriterLibrary();
 loadContentModels();
 
 document.addEventListener("keydown", (event) => {
