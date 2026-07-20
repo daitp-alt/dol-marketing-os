@@ -36,7 +36,16 @@
 
           <p class="nav-label">Marketing apps</p>
           <a class="nav-item" href="#seo" data-view="seo"><span>⌕</span> SEO Suite</a>
-          <a class="nav-item" href="#content" data-view="content"><span>✦</span> Content Studio</a>
+          <div class="nav-group open" id="contentNavGroup">
+            <button class="nav-item nav-parent" id="contentNavToggle" type="button" aria-expanded="true"><span>✦</span> Content Tools <i>⌄</i></button>
+            <div class="nav-submenu" id="contentSubmenu">
+              <a class="nav-subitem" href="#content/keywords" data-content-route="keywords"><span>⌕</span> Keywords Research</a>
+              <a class="nav-subitem" href="#content/outline" data-content-route="outline"><span>☷</span> Outline Content</a>
+              <a class="nav-subitem active" href="#content/writer" data-content-route="writer"><span>✎</span> Writer Content</a>
+              <a class="nav-subitem" href="#content/review" data-content-route="review"><span>✓</span> Review Content</a>
+              <a class="nav-subitem" href="#content/audit" data-content-route="audit"><span>⌁</span> Audit Content</a>
+            </div>
+          </div>
           <a class="nav-item" href="#seeding" data-view="seeding"><span>◎</span> Seeding</a>
           <a class="nav-item" href="#ads" data-view="ads"><span>↗</span> Paid Ads</a>
           <a class="nav-item" href="#social" data-view="social"><span>◫</span> Social & Campaign</a>
@@ -122,21 +131,13 @@
           </section>
 
           <section class="view" id="view-content">
-            <div class="page-heading"><div><p class="eyebrow purple-text">AI CONTENT OPERATIONS</p><h1>Content Studio</h1><p>Nghiên cứu, viết, kiểm duyệt và audit content trên một quy trình thống nhất.</p></div><div class="heading-actions"><button class="secondary-btn" id="contentPromptLibrary">Prompt Library</button><button class="primary-btn" data-action="new-content">＋ Content job</button></div></div>
+            <div class="page-heading"><div><p class="eyebrow purple-text" id="contentEyebrow">AI WRITING WORKSPACE</p><h1 id="contentPageTitle">Writer Content</h1><p id="contentPageDescription">Viết content bằng system prompt, brand voice và tiêu chuẩn on-page của DOL.</p></div><div class="heading-actions"><button class="secondary-btn" id="contentPromptLibrary">Prompt Library</button><button class="primary-btn" data-action="new-content">＋ Content job</button></div></div>
 
             <div class="content-session-bar">
               <span class="gateway-dot" id="contentGatewayDot"></span>
               <div><strong>OpenRouter Content Agent</strong><small id="contentGatewayText">Nhập access token để chạy workflow bằng API của DOL.</small></div>
               <div class="content-token-input"><input id="contentAdminToken" type="password" autocomplete="off" placeholder="AI Gateway access token" /><button class="secondary-btn" id="contentConnect" type="button">Kết nối</button></div>
             </div>
-
-            <nav class="content-tabs" aria-label="Quy trình Content Studio">
-              <button class="content-tab" data-content-tab="keywords"><span>01</span><b>Keywords Research</b><small>Khám phá & phân nhóm</small></button>
-              <button class="content-tab" data-content-tab="outline"><span>02</span><b>Outline Content</b><small>Cấu trúc & intent</small></button>
-              <button class="content-tab active" data-content-tab="writer"><span>03</span><b>Writer Content</b><small>AI writing workspace</small></button>
-              <button class="content-tab" data-content-tab="review"><span>04</span><b>Review Content</b><small>Brand & học thuật</small></button>
-              <button class="content-tab" data-content-tab="audit"><span>05</span><b>Audit Content</b><small>On-page quality</small></button>
-            </nav>
 
             <div class="content-workflow" id="content-keywords" hidden>
               <div class="content-two-col">
