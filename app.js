@@ -175,6 +175,9 @@ const CONTENT_LIBRARY_KEY = "dol_writer_library_v2";
 let contentModels = [];
 let activeArticleId = null;
 let writerAutosaveTimer = null;
+let activeGoogleDoc = null;
+let googleWorkspaceConnected = false;
+let googleWorkspaceConfigured = true;
 
 function groupedModelOptions(models) {
   const groups = new Map();
@@ -338,7 +341,7 @@ function writeLibrary(items) {
 
 function currentArticle(model = "") {
   const output = document.querySelector("#writerOutput");
-  return { id: activeArticleId || `content-${Date.now()}`, title: document.querySelector("#writerTitle").value || "Untitled content", h1: document.querySelector("#writerH1").value, slug: document.querySelector("#writerSlug").value, description: document.querySelector("#writerDescription").value, keyword: document.querySelector("#writerKeyword").value, project: document.querySelector("#writerProject").value, model: model || document.querySelector("#writerModel").value, wordcount: output.innerText.trim().split(/\s+/).filter(Boolean).length, html: output.innerHTML, updatedAt: new Date().toISOString() };
+  return { id: activeArticleId || `content-${Date.now()}`, title: document.querySelector("#writerTitle").value || "Untitled content", h1: document.querySelector("#writerH1").value, slug: document.querySelector("#writerSlug").value, description: document.querySelector("#writerDescription").value, keyword: document.querySelector("#writerKeyword").value, project: document.querySelector("#writerProject").value, model: model || document.querySelector("#writerModel").value, wordcount: output.innerText.trim().split(/\s+/).filter(Boolean).length, html: output.innerHTML, googleDoc: activeGoogleDoc, updatedAt: new Date().toISOString() };
 }
 
 function saveCurrentArticle(model = "") {
@@ -356,13 +359,15 @@ function renderWriterLibrary() {
   const container = document.querySelector("#writerLibrary");
   document.querySelector("#writerLibraryCount").textContent = `${items.length} bài`;
   if (!items.length) { container.innerHTML = '<div class="library-empty">Chưa có bài viết nào. Bài mới sẽ xuất hiện tại đây sau khi generate.</div>'; return; }
-  container.innerHTML = items.map((item) => `<div class="library-row" data-article-id="${escapeHtml(item.id)}"><div class="library-main"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.keyword)} · ${escapeHtml(item.project)}</small></div><div class="library-model"><strong>${escapeHtml(item.model)}</strong><small>${Number(item.wordcount || 0).toLocaleString("vi-VN")} từ</small></div><time>${new Date(item.updatedAt).toLocaleString("vi-VN")}</time><div class="library-actions"><button data-library-open>Mở editor</button><select data-library-format><option value="html">HTML</option><option value="doc">DOC</option><option value="txt">TXT</option><option value="md">Markdown</option><option value="json">JSON</option></select><button data-library-export>Export</button></div></div>`).join("");
+  container.innerHTML = items.map((item) => `<div class="library-row" data-article-id="${escapeHtml(item.id)}"><div class="library-main"><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.keyword)} · ${escapeHtml(item.project)}${item.googleDoc?.id ? " · Google Docs ✓" : ""}</small></div><div class="library-model"><strong>${escapeHtml(item.model)}</strong><small>${Number(item.wordcount || 0).toLocaleString("vi-VN")} từ</small></div><time>${new Date(item.updatedAt).toLocaleString("vi-VN")}</time><div class="library-actions"><button data-library-open>Mở editor</button><select data-library-format><option value="html">HTML</option><option value="doc">DOC</option><option value="txt">TXT</option><option value="md">Markdown</option><option value="json">JSON</option></select><button data-library-export>Export</button></div></div>`).join("");
 }
 
 function showWriterEditor() {
   document.querySelector("#writerSetupWorkspace").hidden = true;
   document.querySelector("#writerEditorDashboard").hidden = false;
   document.querySelector("#editorDocumentTitle").textContent = document.querySelector("#writerTitle").value || "Untitled content";
+  renderGoogleDocState();
+  if (activeGoogleDoc?.id) loadGoogleComments();
   updateSeoDashboard();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -383,6 +388,7 @@ async function generateWriterContent() {
   try {
     const data = await callContentAgent(writerPayload());
     activeArticleId = `content-${Date.now()}`;
+    activeGoogleDoc = null;
     document.querySelector("#writerOutput").innerHTML = sanitizeGeneratedHtml(data.content);
     document.querySelector("#writerOutputMeta").textContent = `${data.model} · ${data.usage?.total_tokens?.toLocaleString("vi-VN") || "—"} tokens`;
     saveCurrentArticle(data.model);
@@ -548,6 +554,7 @@ document.querySelector("#writerLibrary")?.addEventListener("click", (event) => {
   if (!article) return;
   if (event.target.closest("[data-library-open]")) {
     activeArticleId = article.id;
+    activeGoogleDoc = article.googleDoc || null;
     document.querySelector("#writerOutput").innerHTML = sanitizeGeneratedHtml(article.html);
     [["#writerTitle", article.title], ["#writerH1", article.h1], ["#writerSlug", article.slug], ["#writerDescription", article.description], ["#writerKeyword", article.keyword]].forEach(([selector, value]) => { document.querySelector(selector).value = value || ""; });
     document.querySelector("#writerOutputMeta").textContent = `${article.model} · cập nhật ${new Date(article.updatedAt).toLocaleString("vi-VN")}`;
@@ -562,10 +569,184 @@ document.querySelectorAll("#writerSystemPrompt,#writerTitle,#writerKeyword,#writ
   document.querySelector("#writerTokenEstimate").textContent = `~${Math.max(300, Math.round(chars / 3.5)).toLocaleString("vi-VN")} tokens`;
 }));
 
+// Google Workspace / Docs integration
+async function googleRequest(path, options = {}) {
+  const response = await fetch(`${BASE_PATH}/api/google/${path}`, { credentials: "same-origin", ...options, headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) } });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    if (response.status === 401) { googleWorkspaceConnected = false; renderGoogleDocState(); }
+    throw new Error(data.error || "Google Workspace không thể hoàn thành yêu cầu.");
+  }
+  return data;
+}
+
+function renderGoogleDocState() {
+  const title = document.querySelector("#googleDocTitle");
+  if (!title) return;
+  const meta = document.querySelector("#googleDocMeta");
+  const state = document.querySelector("#googleDocState");
+  const connect = document.querySelector("#googleConnect");
+  const create = document.querySelector("#createGoogleDoc");
+  const sync = document.querySelector("#syncGoogleDoc");
+  const pull = document.querySelector("#pullGoogleDoc");
+  const open = document.querySelector("#openGoogleDoc");
+  connect.hidden = googleWorkspaceConnected;
+  create.hidden = !googleWorkspaceConnected || Boolean(activeGoogleDoc?.id);
+  sync.hidden = !googleWorkspaceConnected || !activeGoogleDoc?.id;
+  pull.hidden = !googleWorkspaceConnected || !activeGoogleDoc?.id;
+  open.hidden = !activeGoogleDoc?.url;
+  if (activeGoogleDoc?.url) open.href = activeGoogleDoc.url;
+  if (activeGoogleDoc?.id) {
+    title.textContent = activeGoogleDoc.name || document.querySelector("#writerTitle").value || "Google Doc";
+    meta.textContent = activeGoogleDoc.modifiedTime ? `Google Doc gốc · cập nhật ${new Date(activeGoogleDoc.modifiedTime).toLocaleString("vi-VN")}` : "Google Doc gốc đã liên kết với content này.";
+    state.textContent = "Đã liên kết";
+    state.className = "google-doc-state synced";
+  } else if (googleWorkspaceConnected) {
+    title.textContent = "Google Workspace đã kết nối";
+    meta.textContent = "Sẵn sàng tạo Google Doc trong thư mục Content của DOL.";
+    state.textContent = "Đã kết nối";
+    state.className = "google-doc-state connected";
+  } else {
+    title.textContent = "Google Docs chưa kết nối";
+    meta.textContent = googleWorkspaceConfigured ? "Đăng nhập Google Workspace để tạo tài liệu và đồng bộ comment." : "Chưa cấu hình Google OAuth secrets trên Vercel.";
+    state.textContent = "Chưa kết nối";
+    state.className = "google-doc-state disconnected";
+  }
+}
+
+async function checkGoogleWorkspace() {
+  try {
+    const data = await googleRequest("status");
+    googleWorkspaceConfigured = data.configured !== false;
+    googleWorkspaceConnected = Boolean(data.connected);
+  } catch { googleWorkspaceConnected = false; }
+  renderGoogleDocState();
+}
+
+function editorGooglePayload() {
+  const output = document.querySelector("#writerOutput");
+  const nodes = [...output.querySelectorAll("h1,h2,h3,p,li,blockquote")];
+  const blocks = nodes.length ? nodes : [output];
+  let text = "";
+  const paragraphs = [];
+  blocks.forEach((node) => {
+    const value = node.innerText.trim();
+    if (!value) return;
+    const startIndex = text.length + 1;
+    text += `${value}\n`;
+    const tag = node.tagName?.toLowerCase();
+    const namedStyleType = tag === "h1" ? "TITLE" : tag === "h2" ? "HEADING_1" : tag === "h3" ? "HEADING_2" : "NORMAL_TEXT";
+    paragraphs.push({ startIndex, endIndex: startIndex + value.length, namedStyleType });
+  });
+  return { title: document.querySelector("#writerTitle").value || "DOL Content", text: text || `${output.innerText.trim()}\n`, paragraphs };
+}
+
+function setGoogleButtonLoading(button, loading, label) {
+  if (!button) return;
+  if (loading) { button.dataset.label = button.textContent; button.disabled = true; button.textContent = "Đang xử lý..."; }
+  else { button.disabled = false; button.textContent = label || button.dataset.label || button.textContent; }
+}
+
+async function createGoogleDocument() {
+  if (!document.querySelector("#writerOutput").innerText.trim()) return showToast("Chưa có content", "Generate hoặc nhập content trước khi tạo Google Doc.");
+  const button = document.querySelector("#createGoogleDoc");
+  setGoogleButtonLoading(button, true);
+  try {
+    const data = await googleRequest("document", { method: "POST", body: JSON.stringify({ action: "create", ...editorGooglePayload() }) });
+    activeGoogleDoc = data.document;
+    saveCurrentArticle();
+    renderGoogleDocState();
+    await loadGoogleComments();
+    showToast("Đã tạo Google Doc", "Nội dung đã được ghi vào tài liệu gốc của DOL.");
+  } catch (error) { showToast("Không thể tạo Google Doc", error.message); }
+  finally { setGoogleButtonLoading(button, false, "Tạo Google Doc"); }
+}
+
+async function pushToGoogleDocument() {
+  if (!activeGoogleDoc?.id) return createGoogleDocument();
+  const button = document.querySelector("#syncGoogleDoc");
+  setGoogleButtonLoading(button, true);
+  try {
+    const data = await googleRequest("document", { method: "POST", body: JSON.stringify({ action: "update", documentId: activeGoogleDoc.id, ...editorGooglePayload() }) });
+    activeGoogleDoc = { ...activeGoogleDoc, ...data.document };
+    saveCurrentArticle();
+    renderGoogleDocState();
+    showToast("Đã đồng bộ Google Docs", "Bản trên web đã được gửi lên Google Doc.");
+  } catch (error) { showToast("Đồng bộ thất bại", error.message); }
+  finally { setGoogleButtonLoading(button, false, "↑ Gửi lên Docs"); }
+}
+
+async function pullFromGoogleDocument() {
+  if (!activeGoogleDoc?.id) return;
+  const button = document.querySelector("#pullGoogleDoc");
+  setGoogleButtonLoading(button, true);
+  try {
+    const data = await googleRequest(`document?id=${encodeURIComponent(activeGoogleDoc.id)}`);
+    const text = data.document.text?.trim() || "";
+    if (text) document.querySelector("#writerOutput").innerHTML = text.split(/\n{2,}/).map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`).join("");
+    activeGoogleDoc = { ...activeGoogleDoc, ...data.document };
+    saveCurrentArticle();
+    updateSeoDashboard();
+    renderGoogleComments(data.comments || []);
+    renderGoogleDocState();
+    showToast("Đã lấy bản Google Docs", "Editor đã cập nhật theo nội dung mới nhất trên Google.");
+  } catch (error) { showToast("Không thể lấy Google Doc", error.message); }
+  finally { setGoogleButtonLoading(button, false, "↓ Lấy từ Docs"); }
+}
+
+function renderGoogleComments(comments = []) {
+  const container = document.querySelector("#googleCommentList");
+  if (!container) return;
+  if (!activeGoogleDoc?.id) { container.innerHTML = '<div class="google-comment-empty">Kết nối một Google Doc để xem feedback.</div>'; return; }
+  if (!comments.length) { container.innerHTML = '<div class="google-comment-empty">Chưa có comment. Feedback tạo ở đây sẽ xuất hiện trong Google Drive/Docs.</div>'; return; }
+  container.innerHTML = comments.map((comment) => `<article class="google-comment ${comment.resolved ? "resolved" : ""}" data-google-comment="${escapeHtml(comment.id)}"><div class="google-comment-head"><strong>${escapeHtml(comment.author?.displayName || "Google user")}</strong><time>${new Date(comment.createdTime).toLocaleString("vi-VN")}</time></div><p>${escapeHtml(comment.content || "")}</p>${comment.resolved ? '<span class="google-comment-status">✓ Đã resolve</span>' : '<div class="google-comment-actions"><button type="button" data-google-reply>Reply</button><button type="button" data-google-resolve>Resolve</button></div>'}<div class="google-replies">${(comment.replies || []).filter((reply) => !reply.deleted && reply.content).map((reply) => `<div class="google-reply"><strong>${escapeHtml(reply.author?.displayName || "Google user")}</strong> ${escapeHtml(reply.content)}</div>`).join("")}</div></article>`).join("");
+}
+
+async function loadGoogleComments() {
+  if (!activeGoogleDoc?.id || !googleWorkspaceConnected) return renderGoogleComments([]);
+  try { const data = await googleRequest(`document?id=${encodeURIComponent(activeGoogleDoc.id)}&comments=1`); renderGoogleComments(data.comments || []); }
+  catch (error) { document.querySelector("#googleCommentList").innerHTML = `<div class="google-comment-empty">${escapeHtml(error.message)}</div>`; }
+}
+
+async function addGoogleComment() {
+  const input = document.querySelector("#googleCommentInput");
+  if (!activeGoogleDoc?.id) return showToast("Chưa có Google Doc", "Tạo hoặc liên kết tài liệu trước khi comment.");
+  if (!input.value.trim()) return;
+  const button = document.querySelector("#addGoogleComment");
+  setGoogleButtonLoading(button, true);
+  try {
+    await googleRequest("document", { method: "POST", body: JSON.stringify({ action: "comment", documentId: activeGoogleDoc.id, content: input.value.trim() }) });
+    input.value = "";
+    await loadGoogleComments();
+    showToast("Đã gửi comment", "Comment đã được thêm bằng tài khoản Google của bạn.");
+  } catch (error) { showToast("Không thể comment", error.message); }
+  finally { setGoogleButtonLoading(button, false, "Gửi comment"); }
+}
+
+document.querySelector("#googleConnect")?.addEventListener("click", () => { location.href = `${BASE_PATH}/api/google/auth`; });
+document.querySelector("#createGoogleDoc")?.addEventListener("click", createGoogleDocument);
+document.querySelector("#syncGoogleDoc")?.addEventListener("click", pushToGoogleDocument);
+document.querySelector("#pullGoogleDoc")?.addEventListener("click", pullFromGoogleDocument);
+document.querySelector("#refreshGoogleComments")?.addEventListener("click", loadGoogleComments);
+document.querySelector("#addGoogleComment")?.addEventListener("click", addGoogleComment);
+document.querySelector("#googleCommentList")?.addEventListener("click", async (event) => {
+  const comment = event.target.closest("[data-google-comment]");
+  if (!comment) return;
+  const resolve = Boolean(event.target.closest("[data-google-resolve]"));
+  if (!resolve && !event.target.closest("[data-google-reply]")) return;
+  const content = resolve ? "Đã xử lý feedback trên DOL Marketing OS." : window.prompt("Nhập nội dung reply:", "");
+  if (!content) return;
+  try {
+    await googleRequest("document", { method: "POST", body: JSON.stringify({ action: "reply", documentId: activeGoogleDoc.id, commentId: comment.dataset.googleComment, content, resolve }) });
+    await loadGoogleComments();
+    showToast(resolve ? "Đã resolve comment" : "Đã reply", "Google Docs đã nhận cập nhật.");
+  } catch (error) { showToast("Không thể cập nhật comment", error.message); }
+});
 
 document.querySelector("#contentPromptLibrary")?.addEventListener("click", () => showToast("Prompt Library", "Prompt preset có thể chọn và custom trực tiếp trong Writer setup."));
 renderWriterLibrary();
 loadContentModels();
+checkGoogleWorkspace();
 
 document.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
