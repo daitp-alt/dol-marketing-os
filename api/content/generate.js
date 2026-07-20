@@ -1,7 +1,7 @@
 const crypto = require("crypto");
 
 const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
-const ALLOWED_MODES = new Set(["keywords", "outline", "metadata", "writer", "review", "audit"]);
+const ALLOWED_MODES = new Set(["keywords", "outline", "metadata", "writer", "review", "audit", "chat"]);
 
 function safeEqual(left, right) {
   const a = Buffer.from(String(left || ""));
@@ -15,6 +15,20 @@ function clean(value, max = 12000) {
 
 function list(value, maxItems = 20) {
   return Array.isArray(value) ? value.slice(0, maxItems).map((item) => clean(item, 500)).filter(Boolean) : [];
+}
+
+function chatMessages(value) {
+  if (!Array.isArray(value)) return [];
+  let total = 0;
+  const output = [];
+  value.slice(-40).reverse().forEach((message) => {
+    const role = message?.role === "assistant" ? "assistant" : message?.role === "user" ? "user" : "";
+    const content = clean(message?.content, 12000);
+    if (!role || !content || total + content.length > 120000) return;
+    total += content.length;
+    output.push({ role, content });
+  });
+  return output.reverse();
 }
 
 function buildPrompt(body) {
@@ -91,8 +105,11 @@ module.exports = async function handler(request, response) {
     if (!ALLOWED_MODES.has(body.mode)) return response.status(400).json({ error: "Workflow không hợp lệ." });
     const model = clean(body.model, 160);
     if (!/^[a-zA-Z0-9._:/-]+$/.test(model)) return response.status(400).json({ error: "Model ID không hợp lệ." });
-    const prompt = buildPrompt(body);
     const temperature = Math.max(0, Math.min(2, Number(body.temperature ?? 0.4)));
+    const messages = body.mode === "chat"
+      ? [{ role: "system", content: clean(body.systemPrompt, 10000) || "Bạn là DOL Content Copilot. Trả lời chính xác, hữu ích và không bịa dữ kiện." }, ...chatMessages(body.messages)]
+      : (() => { const prompt = buildPrompt(body); return [{ role: "system", content: prompt.system }, { role: "user", content: prompt.user }]; })();
+    if (body.mode === "chat" && !messages.some((message) => message.role === "user")) return response.status(400).json({ error: "Hội thoại chưa có tin nhắn của user." });
 
     const upstream = await fetch(OPENROUTER_CHAT_URL, {
       method: "POST",
@@ -104,7 +121,7 @@ module.exports = async function handler(request, response) {
       },
       body: JSON.stringify({
         model,
-        messages: [{ role: "system", content: prompt.system }, { role: "user", content: prompt.user }],
+        messages,
         temperature,
         max_completion_tokens: body.mode === "writer" ? 12000 : body.mode === "metadata" ? 2000 : 5000,
         ...(body.mode === "metadata" ? { response_format: { type: "json_object" } } : {}),
