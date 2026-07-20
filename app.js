@@ -93,6 +93,7 @@ let contentSessionToken = "";
 const contentRoutes = {
   keywords: { eyebrow: "SEO DISCOVERY", title: "Keywords Research", description: "Khám phá, phân nhóm và ưu tiên keyword cho từng dự án DOL." },
   outline: { eyebrow: "CONTENT STRATEGY", title: "Outline Content", description: "Xây cấu trúc bài theo search intent, entities và topical coverage." },
+  chatbot: { eyebrow: "AI CONTENT ASSISTANT", title: "Content Chatbot", description: "Trao đổi nhiều lượt với AI theo system prompt, brand voice và ngữ cảnh công việc của DOL." },
   writer: { eyebrow: "AI WRITING WORKSPACE", title: "Writer Content", description: "Viết content bằng system prompt, brand voice và tiêu chuẩn on-page của DOL." },
   review: { eyebrow: "EDITORIAL QUALITY", title: "Review Content", description: "Kiểm duyệt brand voice, logic, học thuật và độ tự nhiên trước khi xuất bản." },
   audit: { eyebrow: "ON-PAGE QUALITY", title: "Audit Content", description: "Đánh giá SEO, cấu trúc, readability và cơ hội cải thiện nội dung." },
@@ -562,9 +563,175 @@ document.querySelectorAll("#writerSystemPrompt,#writerTitle,#writerKeyword,#writ
   document.querySelector("#writerTokenEstimate").textContent = `~${Math.max(300, Math.round(chars / 3.5)).toLocaleString("vi-VN")} tokens`;
 }));
 
+// Content Chatbot
+const CONTENT_CHAT_KEY = "dol_content_chats_v1";
+const DEFAULT_CHAT_SYSTEM_PROMPT = "Bạn là DOL Content Copilot, trợ lý marketing và content cấp senior của DOL English. Trả lời chính xác, thực tế, có cấu trúc, ưu tiên tiếng Việt tự nhiên và tuân thủ brand voice của DOL. Không bịa dữ kiện, nguồn hoặc số liệu. Khi thiếu ngữ cảnh quan trọng, hãy hỏi lại ngắn gọn.";
+let activeChatId = null;
+let activeChatController = null;
+let chatRequestPending = false;
+
+function readContentChats() {
+  try {
+    const chats = JSON.parse(localStorage.getItem(CONTENT_CHAT_KEY) || "[]");
+    return Array.isArray(chats) ? chats : [];
+  } catch { return []; }
+}
+
+function writeContentChats(chats) {
+  try { localStorage.setItem(CONTENT_CHAT_KEY, JSON.stringify(chats.slice(0, 30))); }
+  catch { showToast("Không thể lưu hội thoại", "Dung lượng trình duyệt đã đầy."); }
+}
+
+function createContentChat() {
+  const id = globalThis.crypto?.randomUUID?.() || `chat-${Date.now()}`;
+  const chat = { id, title: "Chat mới", model: document.querySelector("#chatModel")?.value || "openai/gpt-4.1-mini", systemPrompt: DEFAULT_CHAT_SYSTEM_PROMPT, temperature: 0.5, contextLimit: 24, messages: [], updatedAt: new Date().toISOString() };
+  writeContentChats([chat, ...readContentChats()]);
+  activeChatId = id;
+  renderContentChat();
+  document.querySelector("#chatInput")?.focus();
+  return chat;
+}
+
+function activeContentChat(createIfMissing = false) {
+  const chats = readContentChats();
+  let chat = chats.find((item) => item.id === activeChatId);
+  if (!chat && chats.length) { chat = chats[0]; activeChatId = chat.id; }
+  if (!chat && createIfMissing) return createContentChat();
+  return chat || null;
+}
+
+function saveActiveChat(patch = {}) {
+  const chats = readContentChats();
+  const index = chats.findIndex((item) => item.id === activeChatId);
+  if (index < 0) return;
+  chats[index] = { ...chats[index], ...patch, updatedAt: new Date().toISOString() };
+  const [updated] = chats.splice(index, 1);
+  writeContentChats([updated, ...chats]);
+}
+
+function chatTime(value) {
+  const date = new Date(value);
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+}
+
+function renderChatHistory() {
+  const query = document.querySelector("#chatSearch")?.value.trim().toLowerCase() || "";
+  const chats = readContentChats().filter((chat) => !query || chat.title.toLowerCase().includes(query) || chat.messages?.some((message) => String(message.content).toLowerCase().includes(query)));
+  const container = document.querySelector("#chatConversationList");
+  document.querySelector("#chatCount").textContent = String(readContentChats().length);
+  if (!chats.length) {
+    container.innerHTML = `<div class="chat-history-empty">${query ? "Không tìm thấy hội thoại." : "Chưa có hội thoại nào."}</div>`;
+    return;
+  }
+  container.innerHTML = chats.map((chat) => `<button class="chat-conversation ${chat.id === activeChatId ? "active" : ""}" type="button" data-chat-id="${escapeHtml(chat.id)}"><span>◌</span><span><strong>${escapeHtml(chat.title || "Chat mới")}</strong><small>${chat.messages?.length || 0} tin nhắn · ${chatTime(chat.updatedAt)}</small></span><i data-delete-chat title="Xóa">×</i></button>`).join("");
+}
+
+function renderChatWelcome() {
+  return `<div class="chat-welcome"><span class="chat-welcome-mark">✦</span><h2>Mình có thể hỗ trợ content gì hôm nay?</h2><p>Trao đổi với AI theo ngữ cảnh DOL English hoặc bắt đầu nhanh bằng một gợi ý.</p><div class="chat-suggestions"><button type="button" data-chat-prompt="Lên 10 ý tưởng content SEO cho chủ đề học IELTS, phân loại theo search intent."><strong>⌕ Ý tưởng SEO</strong><small>Lên topic theo search intent</small></button><button type="button" data-chat-prompt="Hãy giúp tôi xây outline chi tiết cho bài viết về lộ trình IELTS 0-6.5."><strong>☷ Xây outline</strong><small>Tạo cấu trúc bài chuyên sâu</small></button><button type="button" data-chat-prompt="Review đoạn content tôi sắp gửi theo brand voice DOL English và đề xuất cách sửa."><strong>✓ Review content</strong><small>Kiểm tra voice và logic</small></button><button type="button" data-chat-prompt="Viết 5 phiên bản tiêu đề thu hút cho một bài IELTS, tránh clickbait và giải thích điểm mạnh từng bản."><strong>✎ Viết tiêu đề</strong><small>Tạo nhiều phiên bản để chọn</small></button></div></div>`;
+}
+
+function renderChatMessages(chat) {
+  const container = document.querySelector("#chatMessages");
+  if (!chat?.messages?.length && !chatRequestPending) { container.innerHTML = renderChatWelcome(); return; }
+  const messages = (chat?.messages || []).map((message, index) => `<article class="chat-message ${message.role}"><div class="chat-message-avatar">${message.role === "user" ? "TT" : "✦"}</div><div class="chat-message-body"><div class="chat-message-name">${message.role === "user" ? "Bạn" : "DOL Content Copilot"}</div><div class="chat-message-content">${escapeHtml(message.content).replace(/\n/g, "<br>")}</div><div class="chat-message-meta"><span>${chatTime(message.createdAt)}</span>${message.role === "assistant" ? `<span>${escapeHtml(message.model || chat.model || "AI")}</span><button type="button" data-copy-chat-message="${index}">▣ Copy</button>` : ""}</div></div></article>`).join("");
+  container.innerHTML = messages + (chatRequestPending ? `<article class="chat-message assistant chat-thinking"><div class="chat-message-avatar">✦</div><div class="chat-message-body"><div class="chat-message-name">DOL Content Copilot</div><div class="typing-dots"><i></i><i></i><i></i></div></div></article>` : "");
+  requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
+}
+
+function syncChatControls(chat = activeContentChat()) {
+  document.querySelector("#chatActiveTitle").textContent = chat?.title || "Chat mới";
+  document.querySelector("#chatActiveMeta").textContent = chat?.messages?.length ? `${chat.messages.length} tin nhắn · lưu trên trình duyệt` : "DOL Content Copilot";
+  if (!chat) return;
+  const model = document.querySelector("#chatModel");
+  if (model && [...model.options].some((option) => option.value === chat.model)) model.value = chat.model;
+  document.querySelector("#chatSystemPrompt").value = chat.systemPrompt || DEFAULT_CHAT_SYSTEM_PROMPT;
+  document.querySelector("#chatTemperature").value = chat.temperature ?? 0.5;
+  document.querySelector("#chatContextLimit").value = String(chat.contextLimit || 24);
+}
+
+function renderContentChat() {
+  const chat = activeContentChat();
+  renderChatHistory();
+  syncChatControls(chat);
+  renderChatMessages(chat);
+}
+
+async function sendContentChat() {
+  const input = document.querySelector("#chatInput");
+  const content = input.value.trim();
+  if (!content || chatRequestPending) return;
+  if (!contentSessionToken) return showToast("Chưa kết nối AI Gateway", "Nhập access token ở thanh phía trên trước khi chat.");
+  let chat = activeContentChat(true);
+  const userMessage = { role: "user", content, createdAt: new Date().toISOString() };
+  const messages = [...(chat.messages || []), userMessage];
+  const title = chat.messages?.length ? chat.title : content.replace(/\s+/g, " ").slice(0, 48) + (content.length > 48 ? "…" : "");
+  saveActiveChat({ title, messages, model: document.querySelector("#chatModel").value, systemPrompt: document.querySelector("#chatSystemPrompt").value.trim() || DEFAULT_CHAT_SYSTEM_PROMPT, temperature: Number(document.querySelector("#chatTemperature").value || 0.5), contextLimit: Number(document.querySelector("#chatContextLimit").value || 24) });
+  input.value = "";
+  input.style.height = "auto";
+  document.querySelector("#chatCharCount").textContent = "0 / 12.000";
+  chat = activeContentChat();
+  chatRequestPending = true;
+  document.querySelector("#stopContentChat").hidden = false;
+  document.querySelector("#sendContentChat").disabled = true;
+  renderContentChat();
+  activeChatController = new AbortController();
+  try {
+    const context = messages.slice(-Math.max(2, chat.contextLimit || 24));
+    const response = await fetch(`${BASE_PATH}/api/content/generate`, { method: "POST", headers: { "Content-Type": "application/json", "X-Admin-Token": contentSessionToken }, body: JSON.stringify({ mode: "chat", model: chat.model, systemPrompt: chat.systemPrompt, temperature: chat.temperature, messages: context }), signal: activeChatController.signal });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Chatbot không thể hoàn thành yêu cầu.");
+    saveActiveChat({ messages: [...messages, { role: "assistant", content: data.content, model: data.model, usage: data.usage || null, createdAt: new Date().toISOString() }] });
+  } catch (error) {
+    if (error.name !== "AbortError") showToast("Chatbot gặp lỗi", error.message);
+  } finally {
+    chatRequestPending = false;
+    activeChatController = null;
+    document.querySelector("#stopContentChat").hidden = true;
+    document.querySelector("#sendContentChat").disabled = false;
+    renderContentChat();
+    input.focus();
+  }
+}
+
+document.querySelector("#newContentChat")?.addEventListener("click", createContentChat);
+document.querySelector("#contentChatForm")?.addEventListener("submit", (event) => { event.preventDefault(); sendContentChat(); });
+document.querySelector("#chatInput")?.addEventListener("keydown", (event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendContentChat(); } });
+document.querySelector("#chatInput")?.addEventListener("input", (event) => { event.target.style.height = "auto"; event.target.style.height = `${Math.min(event.target.scrollHeight, 180)}px`; document.querySelector("#chatCharCount").textContent = `${event.target.value.length.toLocaleString("vi-VN")} / 12.000`; });
+document.querySelector("#chatSearch")?.addEventListener("input", renderChatHistory);
+document.querySelector("#chatSettingsToggle")?.addEventListener("click", (event) => { const settings = document.querySelector("#chatSettings"); settings.hidden = !settings.hidden; event.currentTarget.setAttribute("aria-expanded", String(!settings.hidden)); });
+document.querySelectorAll("#chatModel,#chatSystemPrompt,#chatTemperature,#chatContextLimit").forEach((control) => control?.addEventListener("change", () => { if (!activeContentChat()) return; saveActiveChat({ model: document.querySelector("#chatModel").value, systemPrompt: document.querySelector("#chatSystemPrompt").value.trim() || DEFAULT_CHAT_SYSTEM_PROMPT, temperature: Number(document.querySelector("#chatTemperature").value || 0.5), contextLimit: Number(document.querySelector("#chatContextLimit").value || 24) }); renderContentChat(); }));
+document.querySelector("#stopContentChat")?.addEventListener("click", () => activeChatController?.abort());
+document.querySelector("#deleteContentChat")?.addEventListener("click", () => {
+  if (!activeChatId) return;
+  writeContentChats(readContentChats().filter((chat) => chat.id !== activeChatId));
+  activeChatId = readContentChats()[0]?.id || null;
+  renderContentChat();
+  showToast("Đã xóa hội thoại", "Hội thoại đã được xóa khỏi trình duyệt này.");
+});
+document.querySelector("#chatConversationList")?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-chat-id]");
+  if (!button) return;
+  if (event.target.closest("[data-delete-chat]")) {
+    writeContentChats(readContentChats().filter((chat) => chat.id !== button.dataset.chatId));
+    if (activeChatId === button.dataset.chatId) activeChatId = readContentChats()[0]?.id || null;
+  } else activeChatId = button.dataset.chatId;
+  renderContentChat();
+});
+document.querySelector("#chatMessages")?.addEventListener("click", async (event) => {
+  const suggestion = event.target.closest("[data-chat-prompt]");
+  if (suggestion) { document.querySelector("#chatInput").value = suggestion.dataset.chatPrompt; document.querySelector("#chatInput").dispatchEvent(new Event("input")); document.querySelector("#chatInput").focus(); return; }
+  const copy = event.target.closest("[data-copy-chat-message]");
+  if (copy) { const message = activeContentChat()?.messages?.[Number(copy.dataset.copyChatMessage)]; if (message) { await navigator.clipboard.writeText(message.content); showToast("Đã sao chép", "Câu trả lời đã được đưa vào clipboard."); } }
+});
+
+activeChatId = readContentChats()[0]?.id || null;
+renderContentChat();
+
 document.querySelector("#contentPromptLibrary")?.addEventListener("click", () => showToast("Prompt Library", "Prompt preset có thể chọn và custom trực tiếp trong Writer setup."));
 renderWriterLibrary();
-loadContentModels();
+loadContentModels().then(() => syncChatControls());
 
 document.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
